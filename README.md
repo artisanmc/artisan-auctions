@@ -89,11 +89,11 @@ Inside the plugin, Bukkit stays at the edge so the rules are tested without a se
 
 - `market/`: the rules (`Market`), claims delivery and the ports it needs (threads, wallets,
   items). Money and items always move in an order where a failure ends in the claims box:
-  a buyer's charge is journaled (`auc_payments`) before it is taken, every close is a
+  a buyer's charge is journaled (`artisan_auctions_payments`) before it is taken, every close is a
   compare-and-swap on the listing's version, and a claim is marked taken before it is given.
 - `median/`: price keys, the median and its cache. `importer/`: replayable imports.
-- `db/`: SQL and forward-only migrations of the `auc_*` tables, in the suite's shared
-  database (`api.database`).
+- `db/`: SQL and forward-only migrations of the `artisan_auctions_*` tables (Artisan's `database.table-prefix` +
+  `auctions_`), in the suite's shared database (`api.database`).
 - `paper/`: the Paper side: item serialization, currencies, events, menu repaints, `/ah`,
   data sources and module commands.
 - `src/main/resources/bootstrap/`: the default files, written once to the module's folder
@@ -102,8 +102,8 @@ Inside the plugin, Bukkit stays at the edge so the rules are tested without a se
 
 ## Build
 
-Requires Artisan 2 with the API 2.10.0 (module folders, player commands, text without
-Adventure). Paper or Spigot; the plugin is not marked for Folia. On Paper, items are stored
+Requires Artisan 2 with the API 2.10.0 (table prefix, module folders, player commands,
+text without Adventure). Paper or Spigot; the plugin is not marked for Folia. On Paper, items are stored
 with Paper's byte serialization; on Spigot, with Bukkit's YAML serialization (`yaml:` prefix).
 A server moving from Paper to Spigot cannot read the items stored on Paper. Until the API is released:
 

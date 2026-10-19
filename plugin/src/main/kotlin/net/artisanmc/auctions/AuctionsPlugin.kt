@@ -4,6 +4,7 @@ import net.artisanmc.auctions.api.AuctionsService
 import net.artisanmc.auctions.config.ConfigStore
 import net.artisanmc.auctions.db.AuctionStore
 import net.artisanmc.auctions.db.Migrations
+import net.artisanmc.auctions.db.Schema
 import net.artisanmc.auctions.paper.AdminCommands
 import net.artisanmc.auctions.paper.AhCommand
 import net.artisanmc.auctions.paper.AuctionHouse
@@ -25,6 +26,9 @@ class AuctionsPlugin : JavaPlugin() {
         private set
     lateinit var dataSource: DataSource
         private set
+    /** `artisan_auctions_` by default: Artisan's `database.table-prefix` + `auctions_`. */
+    lateinit var tablePrefix: String
+        private set
     private val configStore by lazy { ConfigStore(logger) }
     private var house: AuctionHouse? = null
 
@@ -40,7 +44,8 @@ class AuctionsPlugin : JavaPlugin() {
 
         try {
             dataSource = api.database.dataSource(this)
-            Migrations(dataSource, logger).run()
+            tablePrefix = api.database.tablePrefix(Schema.MODULE)
+            Migrations(dataSource, logger, tablePrefix).run()
         } catch (e: Exception) {
             logger.severe("Database unavailable, ArtisanAuctions is disabled: ${e.message}")
             server.pluginManager.disablePlugin(this)
@@ -56,7 +61,7 @@ class AuctionsPlugin : JavaPlugin() {
         }
 
         val currencies = Currencies(server.servicesManager)
-        val house = AuctionHouse(this, api, serverId, AuctionStore(dataSource), currencies) { configStore.current }
+        val house = AuctionHouse(this, api, serverId, AuctionStore(dataSource, tablePrefix), currencies) { configStore.current }
         this.house = house
         val admin = AdminCommands(house, Imports(this, house, currencies))
         api.modules.register(AuctionsModule(configStore, currencies, logger) { house })
@@ -92,7 +97,7 @@ class AuctionsPlugin : JavaPlugin() {
     }
 
     companion object {
-        /** First API with module folders (`projectRoots.moduleFolder`); player commands since 2.7.0. */
+        /** Text without Adventure (2.10.0); `database.tablePrefix` since 2.9.0, module folders since 2.8.0, player commands since 2.7.0. */
         const val MIN_CORE_API = "2.10.0"
         /** Ends due listings every 5 s. */
         const val EXPIRY_TICKS = 100L

@@ -1,5 +1,6 @@
 package net.artisanmc.auctions.importer
 
+import net.artisanmc.auctions.P
 import net.artisanmc.auctions.db.AuctionStore
 import net.artisanmc.auctions.db.Migrations
 import net.artisanmc.auctions.market.ClaimKind
@@ -12,7 +13,7 @@ import kotlin.test.*
 
 class ImporterTest {
     private val ds = JdbcDataSource().apply { setURL("jdbc:h2:mem:import_${System.nanoTime()};DB_CLOSE_DELAY=-1") }
-    private val store = AuctionStore(ds).also { Migrations(ds, Logger.getAnonymousLogger()).run() }
+    private val store = AuctionStore(ds, P).also { Migrations(ds, Logger.getAnonymousLogger(), P).run() }
     /** "STONE*3" reads as 3 stone; "BROKEN" cannot be read. */
     private val transcoder = ItemTranscoder { item ->
         if (item.raw == "BROKEN") null

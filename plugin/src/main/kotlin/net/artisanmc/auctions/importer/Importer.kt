@@ -73,7 +73,7 @@ fun interface ItemTranscoder {
 
 /**
  * Turns source records into listings, claims and sales, once. Every record is
- * written with its `auc_import_map` row in one transaction, so a replay skips
+ * written with its `{prefix}import_map` row in one transaction, so a replay skips
  * what is done and a crash mid-import loses nothing. A record whose items
  * cannot all be read stays in the source and is reported, never half-imported.
  */
