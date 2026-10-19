@@ -1,0 +1,19 @@
+name: ArtisanAuctions
+version: '${version}'
+main: net.artisanmc.auctions.AuctionsPlugin
+api-version: '1.21'
+depend: [Artisan]
+description: Auction house for the Artisan suite (fixed-price sales and auctions)
+permissions:
+  auctions.use:
+    description: Open the auction house
+    default: true
+  auctions.sell:
+    description: List items for sale
+    default: true
+  auctions.bid:
+    description: Bid on auctions
+    default: true
+  auctions.admin:
+    description: Administer the auction house
+    default: op

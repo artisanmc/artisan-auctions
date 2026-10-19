@@ -1,0 +1,42 @@
+sales:
+  enabled: true
+  duration: 48h
+  min_price: 1
+  max_price: 1000000000
+auctions:
+  enabled: true
+  durations: [1h, 6h, 12h, 24h, 48h]
+  default_duration: 24h
+  min_increment: { percent: 5, min: 1 }
+  anti_snipe: { window: 60s, extend: 60s }
+  buyout: false
+limits:
+  max_active_listings: 10
+  listing_fee: { percent: 0, flat: 0 }
+  sale_tax: { percent: 5, flat: 0 }
+  cancel_auction_with_bids: true
+currencies:
+  allowed: [vault]
+  default: vault
+items:
+  blacklist: [BEDROCK, BARRIER, COMMAND_BLOCK]
+  blacklist_lore_contains: []
+claims:
+  retention: 30d
+  deliver_directly: true
+median:
+  enabled: true
+  window: { days: 14, max_sales: 100 }
+  min_sales: 5
+  key: auto
+  custom_id_keys: []
+  lore_ignore: []
+  custom_include_enchants: false
+  attributes: ignore
+  custom_window: { days: 90, max_sales: 50 }
+  custom_min_sales: 3
+  include: [sale, auction]
+  per_seller_cap: 3
+  suggest_on_sell: true
+  warn_below: 0.5
+  warn_above: 3.0

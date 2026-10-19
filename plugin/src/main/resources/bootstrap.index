@@ -1,0 +1,5 @@
+data/config.yaml
+lang/en.yaml
+lang/fr.yaml
+manifest.yaml
+models/config.yaml
