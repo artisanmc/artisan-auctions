@@ -109,7 +109,9 @@ object ConfigParser {
             )
         }
 
-        return Result(AuctionsConfig(sales, auctions, limits, currencies, items, claims, median), r.errors)
+        val import = AuctionsConfig.Import(r.section("import").stringMap("currency_map", d.import.currencyMap))
+
+        return Result(AuctionsConfig(sales, auctions, limits, currencies, items, claims, median, import), r.errors)
     }
 
     private class Reader(val map: Map<*, *>, val path: String, val errors: MutableList<String>) {

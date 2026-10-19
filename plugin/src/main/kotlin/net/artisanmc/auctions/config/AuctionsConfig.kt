@@ -16,6 +16,7 @@ data class AuctionsConfig(
     val items: Items = Items(),
     val claims: Claims = Claims(),
     val median: Median = Median(),
+    val import: Import = Import(),
 ) {
     data class Sales(
         val enabled: Boolean = true,
@@ -97,6 +98,9 @@ data class AuctionsConfig(
     )
 
     data class Window(val days: Int, val maxSales: Int)
+
+    /** `/ah admin import`: source currency name → registry id, when the names differ. */
+    data class Import(val currencyMap: Map<String, String> = emptyMap())
 
     /** Both off = read-only house: nothing new is listed, claims still work. */
     val readOnly: Boolean get() = !sales.enabled && !auctions.enabled

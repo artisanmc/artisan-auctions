@@ -7,6 +7,7 @@ import net.artisanmc.auctions.db.Migrations
 import net.artisanmc.auctions.paper.AdminCommands
 import net.artisanmc.auctions.paper.AhCommand
 import net.artisanmc.auctions.paper.AuctionHouse
+import net.artisanmc.auctions.paper.Imports
 import net.artisanmc.auctions.paper.PlayerListener
 import net.artisanmc.auctions.project.ProjectBootstrap
 import net.artisanmc.modules.api.ArtisanAPI
@@ -57,6 +58,8 @@ class AuctionsPlugin : JavaPlugin() {
         server.servicesManager.register(AuctionsService::class.java, AuctionsServiceImpl(configStore, house), this, ServicePriority.Normal)
 
         val admin = AdminCommands(house)
+        val imports = Imports(this, house, api.economy)
+        admin.register("import", imports::run)
         getCommand("ah")?.let { cmd -> AhCommand(house, admin).also { cmd.setExecutor(it); cmd.tabCompleter = it } }
         server.pluginManager.registerEvents(PlayerListener(house), this)
         house.start()

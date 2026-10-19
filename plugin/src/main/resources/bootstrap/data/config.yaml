@@ -42,3 +42,5 @@ median:
   suggest_on_sell: true
   warn_below: 0.5
   warn_above: 3.0
+import:
+  currency_map: {}

@@ -86,8 +86,12 @@ class AdminCommands(private val house: AuctionHouse) {
 
     fun complete(args: List<String>): List<String> = when (args.size) {
         1 -> (listOf("cancel", "closeall", "reindex") + extra.keys).filter { it.startsWith(args[0].lowercase()) }
-        2 -> if (args[0].equals("cancel", true)) house.cache.all().map { it.id.toString().take(8) }.filter { it.startsWith(args[1]) }
-            else emptyList()
+        2 -> when (args[0].lowercase()) {
+            "cancel" -> house.cache.all().map { it.id.toString().take(8) }.filter { it.startsWith(args[1]) }
+            "import" -> Imports.SOURCES.filter { it.startsWith(args[1].lowercase()) }
+            else -> emptyList()
+        }
+        3 -> if (args[0].equals("import", true)) listOf("confirm") else emptyList()
         else -> emptyList()
     }
 }
