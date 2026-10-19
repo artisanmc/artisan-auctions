@@ -2,7 +2,12 @@ package net.artisanmc.auctions
 
 import net.artisanmc.auctions.api.AuctionsService
 import net.artisanmc.auctions.config.ConfigStore
+import net.artisanmc.auctions.db.AuctionStore
 import net.artisanmc.auctions.db.Migrations
+import net.artisanmc.auctions.paper.AdminCommands
+import net.artisanmc.auctions.paper.AhCommand
+import net.artisanmc.auctions.paper.AuctionHouse
+import net.artisanmc.auctions.paper.PlayerListener
 import net.artisanmc.auctions.project.ProjectBootstrap
 import net.artisanmc.modules.api.ArtisanAPI
 import org.bukkit.plugin.ServicePriority
@@ -18,6 +23,7 @@ class AuctionsPlugin : JavaPlugin() {
     lateinit var dataSource: DataSource
         private set
     private val configStore by lazy { ConfigStore(logger) }
+    private var house: AuctionHouse? = null
 
     override fun onEnable() {
         val api = server.servicesManager.getRegistration(ArtisanAPI::class.java)?.provider
@@ -45,11 +51,23 @@ class AuctionsPlugin : JavaPlugin() {
             logger.info("Default auction house Project written to ${projectDir.path}")
         }
 
-        api.modules.register(AuctionsModule(configStore, logger))
+        val house = AuctionHouse(this, api, serverId, AuctionStore(dataSource)) { configStore.current }
+        this.house = house
+        api.modules.register(AuctionsModule(configStore, logger) { house })
         server.servicesManager.register(AuctionsService::class.java, AuctionsServiceImpl(configStore), this, ServicePriority.Normal)
+
+        val admin = AdminCommands(house)
+        getCommand("ah")?.let { cmd -> AhCommand(house, admin).also { cmd.setExecutor(it); cmd.tabCompleter = it } }
+        server.pluginManager.registerEvents(PlayerListener(house), this)
+        house.start()
+        server.scheduler.runTaskTimer(this, Runnable { house.tick() }, EXPIRY_TICKS, EXPIRY_TICKS)
+        server.scheduler.runTaskTimer(this, Runnable { house.purgeStaleClaims() }, PURGE_TICKS, PURGE_TICKS)
     }
 
     override fun onDisable() {
+        server.scheduler.cancelTasks(this)
+        house?.stop()
+        house = null
         server.servicesManager.unregisterAll(this)
     }
 
@@ -82,5 +100,9 @@ class AuctionsPlugin : JavaPlugin() {
     companion object {
         /** First API with api.economy and api.menus. */
         const val MIN_CORE_API = "1.8.0"
+        /** Ends due listings every 5 s. */
+        const val EXPIRY_TICKS = 100L
+        /** Purges claims past their retention every hour. */
+        const val PURGE_TICKS = 72_000L
     }
 }

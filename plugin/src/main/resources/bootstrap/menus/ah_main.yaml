@@ -1,0 +1,249 @@
+schema: menu/v1
+title:
+  - kind: plain
+    value: { en: "<dark_gray>Auction House", fr: "<dark_gray>Hôtel des ventes" }
+size: 54
+refresh_interval: 5
+inputs:
+  - { name: tab, type: string, default: "all" }
+  - { name: sort, type: string, default: "newest" }
+  - { name: search, type: string, default: "" }
+  - name: settings
+    type: list
+    source: { ref: "auctions:settings" }
+  - name: summary
+    type: list
+    source: { ref: "auctions:summary" }
+  - name: listings
+    type: list
+    source:
+      ref: "auctions:listings"
+      params: { tab: "{tab}", sort: "{sort}", search: "{search}" }
+elements:
+  - id: border
+    positions: "0,1,6,7,9,17,18,26,27,35,36,44,47,51"
+    material: GRAY_STAINED_GLASS_PANE
+    title: " "
+
+  # ── Type tabs: only when both sales and auctions are enabled ──
+  - id: tab_all
+    positions: 2
+    material: GRAY_STAINED_GLASS_PANE
+    title: " "
+    states:
+      - if: [ { expression: "settings[0].both && tab == \"all\"" } ]
+        material: NETHER_STAR
+        enchanted: true
+        title: { en: "<green>All listings", fr: "<green>Toutes les annonces" }
+      - if: [ { expression: "settings[0].both" } ]
+        material: NETHER_STAR
+        title: { en: "<white>All listings", fr: "<white>Toutes les annonces" }
+        click: { left: [ { set_arg: { arg: tab, value: "all" } } ] }
+  - id: tab_sale
+    positions: 3
+    material: GRAY_STAINED_GLASS_PANE
+    title: " "
+    states:
+      - if: [ { expression: "settings[0].both && tab == \"sale\"" } ]
+        material: EMERALD
+        enchanted: true
+        title: { en: "<green>Fixed price", fr: "<green>Prix fixe" }
+      - if: [ { expression: "settings[0].both" } ]
+        material: EMERALD
+        title: { en: "<white>Fixed price", fr: "<white>Prix fixe" }
+        click: { left: [ { set_arg: { arg: tab, value: "sale" } } ] }
+  - id: tab_auction
+    positions: 5
+    material: GRAY_STAINED_GLASS_PANE
+    title: " "
+    states:
+      - if: [ { expression: "settings[0].both && tab == \"auction\"" } ]
+        material: GOLDEN_AXE
+        enchanted: true
+        hide: [attributes]
+        title: { en: "<green>Auctions", fr: "<green>Enchères" }
+      - if: [ { expression: "settings[0].both" } ]
+        material: GOLDEN_AXE
+        hide: [attributes]
+        title: { en: "<white>Auctions", fr: "<white>Enchères" }
+        click: { left: [ { set_arg: { arg: tab, value: "auction" } } ] }
+
+  - id: search
+    positions: 4
+    material: NAME_TAG
+    title: { en: "<yellow>Search", fr: "<yellow>Rechercher" }
+    lore:
+      - { en: "<gray>Left-click: search by item or seller", fr: "<gray>Clic gauche : chercher un objet ou un vendeur" }
+      - { en: "<gray>Right-click: clear the search", fr: "<gray>Clic droit : effacer la recherche" }
+    click:
+      left: [ { open_dialog: ah_search } ]
+      right: [ { set_arg: { arg: search, value: "" } } ]
+    states:
+      - if: [ { expression: "search != \"\"" } ]
+        material: NAME_TAG
+        enchanted: true
+        title: { en: "<yellow>Search: <white>{search}", fr: "<yellow>Recherche : <white>{search}" }
+        lore:
+          - { en: "<gray>Left-click: new search", fr: "<gray>Clic gauche : nouvelle recherche" }
+          - { en: "<gray>Right-click: clear the search", fr: "<gray>Clic droit : effacer la recherche" }
+        click:
+          left: [ { open_dialog: ah_search } ]
+          right: [ { set_arg: { arg: search, value: "" } } ]
+
+  - id: sort
+    positions: 8
+    material: HOPPER
+    title: { en: "<yellow>Sort: <white>newest", fr: "<yellow>Tri : <white>plus récentes" }
+    lore:
+      - { en: "<gray>Left-click: next order", fr: "<gray>Clic gauche : ordre suivant" }
+      - { en: "<gray>Right-click: previous order", fr: "<gray>Clic droit : ordre précédent" }
+    click:
+      left: [ { set_arg_cycle_next: { arg: sort, list: "newest,price_asc,price_desc,ending" } } ]
+      right: [ { set_arg_cycle_prev: { arg: sort, list: "newest,price_asc,price_desc,ending" } } ]
+    states:
+      - if: [ { expression: "sort == \"price_asc\"" } ]
+        material: HOPPER
+        title: { en: "<yellow>Sort: <white>cheapest", fr: "<yellow>Tri : <white>moins chères" }
+        lore:
+          - { en: "<gray>Left-click: next order", fr: "<gray>Clic gauche : ordre suivant" }
+          - { en: "<gray>Right-click: previous order", fr: "<gray>Clic droit : ordre précédent" }
+        click:
+          left: [ { set_arg_cycle_next: { arg: sort, list: "newest,price_asc,price_desc,ending" } } ]
+          right: [ { set_arg_cycle_prev: { arg: sort, list: "newest,price_asc,price_desc,ending" } } ]
+      - if: [ { expression: "sort == \"price_desc\"" } ]
+        material: HOPPER
+        title: { en: "<yellow>Sort: <white>most expensive", fr: "<yellow>Tri : <white>plus chères" }
+        lore:
+          - { en: "<gray>Left-click: next order", fr: "<gray>Clic gauche : ordre suivant" }
+          - { en: "<gray>Right-click: previous order", fr: "<gray>Clic droit : ordre précédent" }
+        click:
+          left: [ { set_arg_cycle_next: { arg: sort, list: "newest,price_asc,price_desc,ending" } } ]
+          right: [ { set_arg_cycle_prev: { arg: sort, list: "newest,price_asc,price_desc,ending" } } ]
+      - if: [ { expression: "sort == \"ending\"" } ]
+        material: HOPPER
+        title: { en: "<yellow>Sort: <white>ending soon", fr: "<yellow>Tri : <white>bientôt finies" }
+        lore:
+          - { en: "<gray>Left-click: next order", fr: "<gray>Clic gauche : ordre suivant" }
+          - { en: "<gray>Right-click: previous order", fr: "<gray>Clic droit : ordre précédent" }
+        click:
+          left: [ { set_arg_cycle_next: { arg: sort, list: "newest,price_asc,price_desc,ending" } } ]
+          right: [ { set_arg_cycle_prev: { arg: sort, list: "newest,price_asc,price_desc,ending" } } ]
+
+  # ── The listings ──
+  - id: grid
+    positions: "10-16,19-25,28-34,37-43"
+    iterates: { source: listings, alias: l }
+    item: "{l.icon}"
+    lore:
+      - ""
+      - { en: "<gray>Price: <gold>{l.price_display}", fr: "<gray>Prix : <gold>{l.price_display}" }
+      - { en: "<gray>Seller: <white>{l.seller}", fr: "<gray>Vendeur : <white>{l.seller}" }
+      - { en: "<gray>Ends in: <white>{l.ends_at.until()}", fr: "<gray>Fin dans : <white>{l.ends_at.until()}" }
+      - ""
+      - { en: "<yellow>Click to buy", fr: "<yellow>Cliquer pour acheter" }
+    click:
+      left:
+        - open_dialog: { dialog_id: ah_confirm_buy, context: { id: "{l.id}", name: "{l.name}", price: "{l.price_display}", seller: "{l.seller}", quantity: "{l.quantity}" } }
+      shift_right:
+        - open_menu: { menu_id: ah_lot, context: { id: "{l.id}" } }
+    states:
+      - if: [ { expression: "l.own" } ]
+        item: "{l.icon}"
+        lore:
+          - ""
+          - { en: "<gray>Price: <gold>{l.price_display}", fr: "<gray>Prix : <gold>{l.price_display}" }
+          - { en: "<gray>Ends in: <white>{l.ends_at.until()}", fr: "<gray>Fin dans : <white>{l.ends_at.until()}" }
+          - ""
+          - { en: "<aqua>Your listing", fr: "<aqua>Votre annonce" }
+          - { en: "<red>Right-click to withdraw it", fr: "<red>Clic droit pour la retirer" }
+        click:
+          right:
+            - run_command: "auctions:cancel {l.id}"
+          shift_right:
+            - open_menu: { menu_id: ah_lot, context: { id: "{l.id}" } }
+      - if: [ { expression: "l.is_auction" } ]
+        item: "{l.icon}"
+        lore:
+          - ""
+          - { en: "<gray>Opening bid: <gold>{l.start_price_display}", fr: "<gray>Mise de départ : <gold>{l.start_price_display}" }
+          - { en: "<gray>Bids: <white>{l.bid_count} <dark_gray>· <gray>best: <gold>{l.has_bids ? l.current_bid_display : \"-\"}", fr: "<gray>Offres : <white>{l.bid_count} <dark_gray>· <gray>meilleure : <gold>{l.has_bids ? l.current_bid_display : \"-\"}" }
+          - { en: "<gray>Next bid from: <yellow>{l.min_bid_display}", fr: "<gray>Prochaine offre dès : <yellow>{l.min_bid_display}" }
+          - { en: "<gray>Seller: <white>{l.seller}", fr: "<gray>Vendeur : <white>{l.seller}" }
+          - { en: "<gray>Ends in: <white>{l.ends_at.until()}", fr: "<gray>Fin dans : <white>{l.ends_at.until()}" }
+          - ""
+          - { en: "{l.leading ? \"<green>You hold the best bid\" : \"<yellow>Click to bid\"}", fr: "{l.leading ? \"<green>Vous avez la meilleure offre\" : \"<yellow>Cliquer pour enchérir\"}" }
+          - { en: "{l.buy_now ? \"<yellow>Shift-click: buy now for \" : \"\"}{l.buy_now ? l.buy_now_display : \"\"}", fr: "{l.buy_now ? \"<yellow>Maj-clic : achat immédiat à \" : \"\"}{l.buy_now ? l.buy_now_display : \"\"}" }
+        click:
+          left:
+            - open_dialog: { dialog_id: ah_bid, context: { id: "{l.id}", name: "{l.name}", min_bid: "{l.min_bid}", min_bid_display: "{l.min_bid_display}", seller: "{l.seller}" } }
+          shift_left:
+            - if: [ { expression: "l.buy_now" } ]
+              do:
+                - open_dialog: { dialog_id: ah_confirm_buy, context: { id: "{l.id}", name: "{l.name}", price: "{l.buy_now_display}", seller: "{l.seller}", quantity: "{l.quantity}" } }
+          shift_right:
+            - open_menu: { menu_id: ah_lot, context: { id: "{l.id}" } }
+
+  # ── Bottom bar ──
+  - id: back
+    positions: 45
+    material: GRAY_STAINED_GLASS_PANE
+    title: " "
+    states:
+      - if: [ { expression: "has_previous_menu" } ]
+        material: ARROW
+        title: { en: "<white>Back", fr: "<white>Retour" }
+        click: { left: [ open_previous_menu ] }
+  - id: mine
+    positions: 46
+    material: CHEST
+    title: { en: "<yellow>My listings <gray>({summary[0].mine}/{summary[0].limit})", fr: "<yellow>Mes annonces <gray>({summary[0].mine}/{summary[0].limit})" }
+    click: { left: [ { open_menu: ah_mine } ] }
+  - id: prev
+    positions: 48
+    material: ARROW
+    title: { en: "<white>Previous page", fr: "<white>Page précédente" }
+    click: { left: [ { pagination_prev: grid } ] }
+    states:
+      - if: [ { pagination_at_first: grid } ]
+        material: GRAY_STAINED_GLASS_PANE
+        title: " "
+  - id: sell
+    positions: 49
+    material: GOLD_INGOT
+    title: { en: "<green>Sell the item in your hand", fr: "<green>Vendre l'objet en main" }
+    lore:
+      - { en: "<gray>Hold the item, then click", fr: "<gray>Tenez l'objet, puis cliquez" }
+    click: { left: [ { run_command: "auctions:sell_start" } ] }
+    states:
+      - if: [ { expression: "settings[0].read_only" } ]
+        material: BARRIER
+        title: { en: "<red>The house takes no new listings", fr: "<red>L'hôtel n'accepte plus d'annonces" }
+  - id: next
+    positions: 50
+    material: ARROW
+    title: { en: "<white>Next page", fr: "<white>Page suivante" }
+    click: { left: [ { pagination_next: grid } ] }
+    states:
+      - if: [ { pagination_at_last: grid } ]
+        material: GRAY_STAINED_GLASS_PANE
+        title: " "
+  - id: claims
+    positions: 52
+    material: ENDER_CHEST
+    title: { en: "<yellow>Claims box <gray>({summary[0].claims})", fr: "<yellow>Récupération <gray>({summary[0].claims})" }
+    lore:
+      - { en: "<gray>Bought, unsold and returned items", fr: "<gray>Achats, invendus et objets rendus" }
+    click: { left: [ { open_menu: ah_claims } ] }
+    states:
+      - if: [ { expression: "summary[0].claims > 0" } ]
+        material: ENDER_CHEST
+        enchanted: true
+        title: { en: "<gold>Claims box <gray>({summary[0].claims})", fr: "<gold>Récupération <gray>({summary[0].claims})" }
+        lore:
+          - { en: "<gray>Bought, unsold and returned items", fr: "<gray>Achats, invendus et objets rendus" }
+        click: { left: [ { open_menu: ah_claims } ] }
+  - id: close
+    positions: 53
+    material: BARRIER
+    title: { en: "<red>Close", fr: "<red>Fermer" }
+    click: { left: [ close_menu ] }

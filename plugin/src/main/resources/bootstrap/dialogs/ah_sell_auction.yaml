@@ -1,0 +1,29 @@
+schema: dialog/v1
+title: { en: "Auction {item_name}", fr: "Mettre aux enchères {item_name}" }
+can_close_with_escape: true
+body:
+  - { type: text, text: { en: "<white>{quantity}× {item_name}", fr: "<white>{quantity}× {item_name}" } }
+  - { type: text, text: { en: "<gray>Listing fee: {fee}. Sale tax: {tax}. Amounts in {currency}.", fr: "<gray>Frais de mise en vente : {fee}. Taxe sur la vente : {tax}. Montants en {currency}." } }
+inputs:
+  - { id: start, type: text, label: { en: "Opening bid", fr: "Mise de départ" }, default: "", max_length: 16 }
+  # Keep these options in step with auctions.durations in data/config.yaml.
+  - id: duration
+    type: single_option
+    label: { en: "Duration", fr: "Durée" }
+    default: "24h"
+    options:
+      - { value: "1h", label: "1 h" }
+      - { value: "6h", label: "6 h" }
+      - { value: "12h", label: "12 h" }
+      - { value: "24h", label: { en: "1 day", fr: "1 jour" } }
+      - { value: "48h", label: { en: "2 days", fr: "2 jours" } }
+  - { id: buyout, type: text, label: { en: "Buy-now price (optional, if allowed)", fr: "Prix d'achat immédiat (facultatif, si autorisé)" }, default: "", max_length: 16 }
+buttons:
+  - id: confirm
+    label: { en: "<gold>Start the auction", fr: "<gold>Lancer l'enchère" }
+    actions:
+      - run_command: "auctions:sell auction {start} {duration} {buyout}"
+      - open_menu: ah_main
+  - id: cancel
+    label: { en: "Cancel", fr: "Annuler" }
+    actions: [ close_dialog ]

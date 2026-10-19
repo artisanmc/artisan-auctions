@@ -4,6 +4,12 @@ main: net.artisanmc.auctions.AuctionsPlugin
 api-version: '1.21'
 depend: [Artisan]
 description: Auction house for the Artisan suite (fixed-price sales and auctions)
+commands:
+  ah:
+    description: Open the auction house
+    usage: /ah [sell <price>|auction <start> [duration] [buy-now]|search <text>|mine|claim|admin]
+    aliases: [auctionhouse, hdv]
+    permission: auctions.use
 permissions:
   auctions.use:
     description: Open the auction house
@@ -17,3 +23,6 @@ permissions:
   auctions.admin:
     description: Administer the auction house
     default: op
+  auctions.limit.unlimited:
+    description: No limit of active listings (auctions.limit.<n> sets one)
+    default: false

@@ -50,7 +50,20 @@ data class AuctionsConfig(
     data class Fee(val percent: BigDecimal = BigDecimal.ZERO, val flat: BigDecimal = BigDecimal.ZERO)
 
     /** Ids of the core currency registry (`api.economy`). */
-    data class Currencies(val allowed: List<String> = listOf("vault"), val default: String = "vault")
+    data class Currencies(
+        val allowed: List<String> = listOf("vault"),
+        val default: String = "vault",
+        /** How an amount is written, per currency id: `{amount}` is replaced. Missing: `{amount} <id>`. */
+        val display: Map<String, String> = mapOf("vault" to "{amount} \$"),
+    ) {
+        fun format(currency: String, amount: java.math.BigDecimal): String {
+            val text = amount.setScale(2, java.math.RoundingMode.HALF_UP).let { v ->
+                if (v.stripTrailingZeros().scale() <= 0) "%,d".format(java.util.Locale.ROOT, v.toBigInteger())
+                else "%,.2f".format(java.util.Locale.ROOT, v)
+            }
+            return (display[currency] ?: "{amount} $currency").replace("{amount}", text)
+        }
+    }
 
     data class Items(
         val blacklist: List<String> = listOf("BEDROCK", "BARRIER", "COMMAND_BLOCK"),

@@ -1,0 +1,15 @@
+schema: dialog/v1
+title: { en: "Search the house", fr: "Rechercher dans l'hôtel" }
+can_close_with_escape: true
+body:
+  - { type: text, text: { en: "Part of an item name, a material or a seller.", fr: "Une partie du nom d'un objet, d'un matériau ou d'un vendeur." } }
+inputs:
+  - { id: query, type: text, label: { en: "Search", fr: "Recherche" }, default: "", max_length: 32 }
+buttons:
+  - id: search
+    label: { en: "<green>Search", fr: "<green>Rechercher" }
+    actions:
+      - open_menu: { menu_id: ah_main, context: { search: "{query}" } }
+  - id: cancel
+    label: { en: "Cancel", fr: "Annuler" }
+    actions: [ open_previous_menu ]

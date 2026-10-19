@@ -1,0 +1,14 @@
+schema: dialog/v1
+title: { en: "Confirm the purchase", fr: "Confirmer l'achat" }
+can_close_with_escape: true
+body:
+  - { type: text, text: { en: "Buy <white>{quantity}× {name}<reset> from <white>{seller}<reset> for <gold>{price}<reset>?", fr: "Acheter <white>{quantity}× {name}<reset> à <white>{seller}<reset> pour <gold>{price}<reset> ?" } }
+buttons:
+  - id: confirm
+    label: { en: "<green>Buy", fr: "<green>Acheter" }
+    actions:
+      - run_command: "auctions:buy {id}"
+      - open_previous_menu
+  - id: cancel
+    label: { en: "Cancel", fr: "Annuler" }
+    actions: [ open_previous_menu ]

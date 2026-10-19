@@ -18,6 +18,8 @@ limits:
 currencies:
   allowed: [vault]
   default: vault
+  display:
+    vault: "{amount} $"
 items:
   blacklist: [BEDROCK, BARRIER, COMMAND_BLOCK]
   blacklist_lore_contains: []
