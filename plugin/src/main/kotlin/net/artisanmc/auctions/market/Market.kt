@@ -215,7 +215,7 @@ class Market(
         }
     }
 
-    /** One `auc_sales` row, unless the lot mixes items (no price per item). */
+    /** One `{prefix}sales` row, unless the lot mixes items (no price per item). */
     internal fun saleRows(l: Listing, buyer: UUID?, total: BigDecimal, now: Long): List<Sale> {
         val key = l.sharedPriceKey ?: return emptyList()
         val qty = l.quantity.coerceAtLeast(1)

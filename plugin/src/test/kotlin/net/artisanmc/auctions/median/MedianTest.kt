@@ -1,5 +1,6 @@
 package net.artisanmc.auctions.median
 
+import net.artisanmc.auctions.P
 import net.artisanmc.auctions.api.ListingType
 import net.artisanmc.auctions.config.AuctionsConfig
 import net.artisanmc.auctions.db.AuctionStore
@@ -93,7 +94,7 @@ class MedianMathTest {
 
 class MedianCacheTest {
     private val ds = JdbcDataSource().apply { setURL("jdbc:h2:mem:median_${System.nanoTime()};DB_CLOSE_DELAY=-1") }
-    private val store = AuctionStore(ds).also { Migrations(ds, Logger.getAnonymousLogger()).run() }
+    private val store = AuctionStore(ds, P).also { Migrations(ds, Logger.getAnonymousLogger(), P).run() }
     private val threads = QueueThreads()
     private var now = 100L * MedianCache.DAY_MS
     private var loads = 0
