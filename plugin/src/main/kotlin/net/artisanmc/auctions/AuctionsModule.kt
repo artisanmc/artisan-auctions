@@ -29,7 +29,7 @@ class AuctionsModule(
     override fun onEnable(api: ArtisanAPI) {
         this.api = api
         api.models.declare(ConfigModel.declaration())
-        api.screens.declare(SETTINGS_SCREEN, "Settings", CONFIG_PATH.removeSuffix(".yaml"), PROJECT_ID)
+        api.screens.declare(SETTINGS_SCREEN, "Settings", CONFIG_PATH.removeSuffix(".yaml"), FOLDER)
         api.dataSources.register(SettingsSource.declaration { config.current })
         loadConfig(api)
         ModuleBindings.declare(api, house(api))
@@ -45,7 +45,7 @@ class AuctionsModule(
     }
 
     private fun loadConfig(api: ArtisanAPI) {
-        if (!config.reload(api.project.read(PROJECT_ID, CONFIG_PATH))) return
+        if (!config.reload(api.project.read(FOLDER, CONFIG_PATH))) return
         val unknown = config.current.currencies.allowed.filterNot(currencies::has)
         if (unknown.isNotEmpty()) {
             logger.warning("[Auctions] currencies.allowed names currencies no plugin provides: " +
@@ -55,10 +55,10 @@ class AuctionsModule(
 
     companion object {
         const val ID = "auctions"
-        /** The module's folder, `plugins/Artisan/modules/auctions/`, and the id of its Project. */
-        const val PROJECT_ID = "auctions"
-        /** Where the Project lived before Artisan 2.8 gave modules their folder: moved from there once. */
-        const val LEGACY_PROJECT_DIR = "editor"
+        /** The module's folder, `plugins/Artisan/modules/auctions/`: the id Artisan's API reads its files by. */
+        const val FOLDER = "auctions"
+        /** Where the files lived before Artisan 2.8 gave modules their folder: moved from there once. */
+        const val LEGACY_DIR = "editor"
         const val CONFIG_PATH = "data/config.yaml"
         const val SETTINGS_SCREEN = "auctions:settings"
     }

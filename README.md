@@ -1,13 +1,13 @@
 # Artisan Auctions
 
 Auction house add-on for the [Artisan](https://artisanmc.net) suite: fixed-price sales,
-timed auctions, or both. Menus, dialogs and texts are an Artisan Project the admin edits
-in the Artisan editor; the plugin brings the rules, the money and the storage.
+timed auctions, or both. Menus, dialogs and texts are files of the module's folder,
+`plugins/Artisan/modules/auctions/`, the admin edits in the Artisan editor; the plugin brings the rules, the money and the storage.
 
 ## For server owners
 
 - **Kinds of listing.** `sales.enabled` and `auctions.enabled` in the **Settings** screen
-  (`data/config.yaml` of the Project). Both on: the menus show type tabs. Both off: the house
+  (`data/config.yaml` of the module's folder). Both on: the menus show type tabs. Both off: the house
   is read-only and claims still work.
 - **Selling.** Hold the item, click *Sell* in `/ah` (or `/ah sell <price>`,
   `/ah auction <opening bid> [duration] [buy-now]`). The listing fee is kept, the sale tax is
@@ -32,7 +32,7 @@ in the Artisan editor; the plugin brings the rules, the money and the storage.
   `server-id` in `plugins/ArtisanAuctions/config.yml`.
 
 `/ah` is declared to Artisan (`auctions:ah`): rename it, add aliases, a cooldown or conditions
-with a `command_override/v1` file in the Project's `overrides/command/`.
+with a `command_override/v1` file in `overrides/command/` of the module's folder.
 
 | Command | Permission |
 |---|---|
@@ -96,9 +96,9 @@ Inside the plugin, Bukkit stays at the edge so the rules are tested without a se
   database (`api.database`).
 - `paper/`: the Paper side: item serialization, currencies, events, menu repaints, `/ah`,
   data sources and module commands.
-- `src/main/resources/bootstrap/`: the default Project, written once to the module's folder
-  `plugins/Artisan/modules/auctions/` (a Project left in `plugins/ArtisanAuctions/editor/` by an
-  earlier version is moved there once). List new files in `bootstrap.index`.
+- `src/main/resources/bootstrap/`: the default files, written once to the module's folder
+  `plugins/Artisan/modules/auctions/` when it is empty (files left in
+  `plugins/ArtisanAuctions/editor/` by an earlier version are moved there once). List new files in `bootstrap.index`.
 
 ## Build
 

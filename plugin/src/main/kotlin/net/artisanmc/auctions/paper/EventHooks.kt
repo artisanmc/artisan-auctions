@@ -39,7 +39,7 @@ class ListingSnapshot(private val l: Listing) : AuctionListing {
  * Every call runs on the main thread, as Bukkit events must.
  */
 class EventHooks(
-    private val notifier: ProjectNotifier,
+    private val notifier: ModuleNotifier,
     private val median: (ListRequest) -> BigDecimal? = { null },
     private val onSold: (Listing) -> Unit = {},
     private val listingsChanged: (UUID) -> Unit,

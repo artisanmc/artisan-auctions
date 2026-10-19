@@ -1,5 +1,6 @@
 # Local settings of ArtisanAuctions. Everything players see (rules, menus,
-# texts) is in the auction house Project, edited from the Artisan editor.
+# texts) is in the module's folder, plugins/Artisan/modules/auctions/, edited
+# from the Artisan editor.
 
 # Tags this server's listings in the suite's shared database. Two servers that
 # share the database keep separate auction houses as long as their ids differ.

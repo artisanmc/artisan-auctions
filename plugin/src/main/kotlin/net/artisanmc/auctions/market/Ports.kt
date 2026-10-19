@@ -24,7 +24,7 @@ interface ItemGiver {
     fun isOnline(player: UUID): Boolean
 }
 
-/** What a player is told. [key] is a message of the Project's `auctions.messages` section. */
+/** What a player is told. [key] is a message of the `auctions.messages` section of the module's `lang/` files. */
 interface Notifier {
     fun tell(player: UUID, key: String, args: Map<String, Any> = emptyMap())
 }

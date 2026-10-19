@@ -17,12 +17,12 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 /**
- * Messages live in the add-on's Project (`lang/<lang>.yaml`, section
+ * Messages live in the module's folder (`lang/<lang>.yaml`, section
  * `auctions.messages`), so server owners edit them in the editor like any
  * other text. They are sent through Artisan's action engine, which picks the
  * player's language and fills `{placeholders}` from the args.
  */
-class ProjectNotifier(
+class ModuleNotifier(
     private val actions: ModuleActionsApi,
     private val menus: MenuApi,
     private val config: () -> AuctionsConfig,
@@ -42,15 +42,15 @@ class ProjectNotifier(
     }
 
     fun openMenu(player: Player, menu: String, args: Map<String, Any> = emptyMap()) {
-        if (!menus.open(player, MenuRef(AuctionsModule.PROJECT_ID, menu), args)) {
-            logger.warning("[Auctions] menu '${AuctionsModule.PROJECT_ID}:$menu' not found: was it deleted from the Project?")
+        if (!menus.open(player, MenuRef(AuctionsModule.FOLDER, menu), args)) {
+            logger.warning("[Auctions] menu '${AuctionsModule.FOLDER}:$menu' not found: was it deleted from the module's folder?")
         }
     }
 
     fun openDialog(player: Player, dialog: String, args: Map<String, Any> = emptyMap()) = run(player, "open_dialog $dialog", args)
 
     private fun run(player: Player, dsl: String, args: Map<String, Any>) {
-        runCatching { actions.execute(player, dsl, args.mapValues { (_, v) -> v.toString() }, AuctionsModule.PROJECT_ID) }
+        runCatching { actions.execute(player, dsl, args.mapValues { (_, v) -> v.toString() }, AuctionsModule.FOLDER) }
             .onFailure { logger.log(Level.WARNING, "[Auctions] '$dsl' failed for ${player.name}", it) }
     }
 

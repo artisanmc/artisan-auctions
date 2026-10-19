@@ -44,8 +44,8 @@ class AuctionHouse(
     val threads = PaperThreads(plugin)
     val wallets = EconomyWallets(currencies)
     val cache = ListingCache()
-    val menus = MenuWatch(api.menus, AuctionsModule.PROJECT_ID)
-    val notifier = ProjectNotifier(api.actions, api.menus, config, logger)
+    val menus = MenuWatch(api.menus, AuctionsModule.FOLDER)
+    val notifier = ModuleNotifier(api.actions, api.menus, config, logger)
     val claims = ClaimBox(server, store, threads, config, logger) { owner ->
         Bukkit.getPlayer(owner)?.let { p -> menus.repaint(p, listOf(MENU_CLAIMS)) }
     }
