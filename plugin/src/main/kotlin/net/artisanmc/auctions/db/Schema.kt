@@ -1,7 +1,8 @@
 package net.artisanmc.auctions.db
 
 /**
- * The add-on's tables in the suite's shared database (prefix `auc_`). SQL stays
+ * The add-on's tables in the suite's shared database, named `tablePrefix("auctions")` + name
+ * (`artisan_auctions_listings` by default; [prefix] below). SQL stays
  * in the subset H2, MySQL and MariaDB share: no window functions, no
  * `CREATE INDEX IF NOT EXISTS` (MySQL lacks it, [Migrations] checks instead).
  * Amounts are DECIMAL(19,2), times are epoch milliseconds, ids are UUID strings.
@@ -9,13 +10,16 @@ package net.artisanmc.auctions.db
  * Forward-only: a shipped migration is never edited, a change is a new one.
  */
 object Schema {
+    /** The namespace asked of `DatabaseApi.tablePrefix`. */
+    const val MODULE = "auctions"
 
     class Migration(val version: Int, val description: String, val statements: List<String>)
 
-    val migrations: List<Migration> = listOf(
+    /** [prefix]: the prefix of every table and index, such as `artisan_auctions_`. */
+    fun migrations(prefix: String): List<Migration> = listOf(
         Migration(1, "listings, bids, sales, claims, import map", listOf(
             """
-            CREATE TABLE IF NOT EXISTS auc_listings (
+            CREATE TABLE IF NOT EXISTS ${prefix}listings (
                 id VARCHAR(36) NOT NULL PRIMARY KEY,
                 server VARCHAR(64) NOT NULL,
                 listing_type VARCHAR(16) NOT NULL,
@@ -34,13 +38,13 @@ object Schema {
                 row_version INT NOT NULL DEFAULT 0
             )
             """,
-            "CREATE INDEX auc_listings_status_ends ON auc_listings (status, ends_at)",
-            "CREATE INDEX auc_listings_status_type ON auc_listings (status, listing_type, created_at)",
-            "CREATE INDEX auc_listings_seller ON auc_listings (seller_uuid, status)",
+            "CREATE INDEX ${prefix}listings_status_ends ON ${prefix}listings (status, ends_at)",
+            "CREATE INDEX ${prefix}listings_status_type ON ${prefix}listings (status, listing_type, created_at)",
+            "CREATE INDEX ${prefix}listings_seller ON ${prefix}listings (seller_uuid, status)",
             // One row per stack: a plain listing has one, a lot several. The
             // icon shown for a lot is slot 0.
             """
-            CREATE TABLE IF NOT EXISTS auc_listing_items (
+            CREATE TABLE IF NOT EXISTS ${prefix}listing_items (
                 listing_id VARCHAR(36) NOT NULL,
                 slot_index INT NOT NULL,
                 item_blob TEXT NOT NULL,
@@ -53,7 +57,7 @@ object Schema {
             // `pending` = intent written before the money moves (reconciled at
             // start-up), `held` = escrowed, then `refunded` or `captured`.
             """
-            CREATE TABLE IF NOT EXISTS auc_bids (
+            CREATE TABLE IF NOT EXISTS ${prefix}bids (
                 id VARCHAR(36) NOT NULL PRIMARY KEY,
                 listing_id VARCHAR(36) NOT NULL,
                 bidder_uuid VARCHAR(36) NOT NULL,
@@ -63,11 +67,11 @@ object Schema {
                 created_at BIGINT NOT NULL
             )
             """,
-            "CREATE INDEX auc_bids_listing ON auc_bids (listing_id, state)",
-            "CREATE INDEX auc_bids_state ON auc_bids (state, created_at)",
+            "CREATE INDEX ${prefix}bids_listing ON ${prefix}bids (listing_id, state)",
+            "CREATE INDEX ${prefix}bids_state ON ${prefix}bids (state, created_at)",
             // Concluded sales: the median reads this table, one row per sold listing.
             """
-            CREATE TABLE IF NOT EXISTS auc_sales (
+            CREATE TABLE IF NOT EXISTS ${prefix}sales (
                 id VARCHAR(36) NOT NULL PRIMARY KEY,
                 listing_id VARCHAR(36) NOT NULL,
                 server VARCHAR(64) NOT NULL,
@@ -82,9 +86,9 @@ object Schema {
                 sold_at BIGINT NOT NULL
             )
             """,
-            "CREATE INDEX auc_sales_key ON auc_sales (price_key, currency, sold_at)",
+            "CREATE INDEX ${prefix}sales_key ON ${prefix}sales (price_key, currency, sold_at)",
             """
-            CREATE TABLE IF NOT EXISTS auc_claims (
+            CREATE TABLE IF NOT EXISTS ${prefix}claims (
                 id VARCHAR(36) NOT NULL PRIMARY KEY,
                 server VARCHAR(64) NOT NULL,
                 owner_uuid VARCHAR(36) NOT NULL,
@@ -98,10 +102,10 @@ object Schema {
                 claimed_at BIGINT
             )
             """,
-            "CREATE INDEX auc_claims_owner ON auc_claims (owner_uuid, claimed_at)",
+            "CREATE INDEX ${prefix}claims_owner ON ${prefix}claims (owner_uuid, claimed_at)",
             // Imports are replayable: what was already imported is skipped.
             """
-            CREATE TABLE IF NOT EXISTS auc_import_map (
+            CREATE TABLE IF NOT EXISTS ${prefix}import_map (
                 source VARCHAR(64) NOT NULL,
                 source_id VARCHAR(128) NOT NULL,
                 target_id VARCHAR(36) NOT NULL,
@@ -115,7 +119,7 @@ object Schema {
         // sale never happened: it is refunded through the claims box at start-up.
         Migration(2, "payments journal", listOf(
             """
-            CREATE TABLE IF NOT EXISTS auc_payments (
+            CREATE TABLE IF NOT EXISTS ${prefix}payments (
                 id VARCHAR(36) NOT NULL PRIMARY KEY,
                 server VARCHAR(64) NOT NULL,
                 player_uuid VARCHAR(36) NOT NULL,
@@ -127,7 +131,7 @@ object Schema {
                 created_at BIGINT NOT NULL
             )
             """,
-            "CREATE INDEX auc_payments_state ON auc_payments (server, state)",
+            "CREATE INDEX ${prefix}payments_state ON ${prefix}payments (server, state)",
         )),
     )
 }
