@@ -37,6 +37,8 @@ interface Hooks {
     fun sold(listing: Listing, buyer: UUID, price: BigDecimal, tax: BigDecimal) {}
     fun bidPlaced(listing: Listing, bidder: UUID, amount: BigDecimal) {}
     fun outbid(listing: Listing, previous: UUID, amount: BigDecimal) {}
+    /** An auction ended with [winner] holding the best bid (after [sold]). */
+    fun won(listing: Listing, winner: UUID, price: BigDecimal) {}
     fun expired(listing: Listing) {}
     fun cancelled(listing: Listing, actor: UUID) {}
     fun claimed(claim: Claim) {}

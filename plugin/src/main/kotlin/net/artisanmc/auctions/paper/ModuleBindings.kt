@@ -117,6 +117,7 @@ object ModuleBindings {
             }
         }
         command(api, "auctions:buy") { p, argv -> idOf(argv)?.let { house.buy(p, it) } ?: house.notifier.tell(p, "gone") }
+        command(api, "auctions:bid") { p, argv -> idOf(argv)?.let { house.bid(p, it, argv.getOrNull(1)) } ?: house.notifier.tell(p, "gone") }
         command(api, "auctions:cancel") { p, argv -> idOf(argv)?.let { house.cancel(p, it, admin = false) } ?: house.notifier.tell(p, "gone") }
         command(api, "auctions:admin_cancel") { p, argv -> idOf(argv)?.let { house.cancel(p, it, admin = true) } ?: house.notifier.tell(p, "gone") }
         command(api, "auctions:claim") { p, argv ->

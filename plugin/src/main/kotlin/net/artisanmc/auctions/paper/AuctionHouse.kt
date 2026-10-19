@@ -239,6 +239,21 @@ class AuctionHouse(
         }
     }
 
+    fun bid(p: Player, id: UUID, amountText: String?) {
+        if (!p.hasPermission(PERM_BID)) return notifier.tell(p, "no_permission")
+        val amount = amountText?.let(Fees::parseAmount) ?: return notifier.tell(p, "bad_amount", mapOf("input" to (amountText ?: "")))
+        val currency = cache.get(id)?.currency ?: config().currencies.default
+        market.bid(p.uniqueId, id, amount) { outcome ->
+            when (outcome) {
+                is Market.BidPlaced -> notifier.tell(p, if (outcome.extended) "bid_placed_extended" else "bid_placed",
+                    notifier.listingArgs(outcome.listing) + mapOf("amount" to notifier.money(currency, outcome.amount)))
+                is Market.Bought -> notifier.tell(p, "bought", notifier.listingArgs(outcome.listing))
+                is Market.Vetoed -> notifier.veto(p, outcome.veto.message)
+                else -> notifier.tell(p, outcome.key, display(outcome.args, currency))
+            }
+        }
+    }
+
     fun cancel(p: Player, id: UUID, admin: Boolean) {
         if (admin && !p.hasPermission(PERM_ADMIN)) return notifier.tell(p, "no_permission")
         market.cancel(p.uniqueId, id, admin) { outcome ->

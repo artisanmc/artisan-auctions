@@ -95,6 +95,10 @@ class EventHooks(
         notifier.tell(previous, "outbid", notifier.listingArgs(listing) + mapOf("amount" to notifier.money(listing.currency, amount)))
     }
 
+    override fun won(listing: Listing, winner: UUID, price: BigDecimal) {
+        notifier.tell(winner, "won", notifier.listingArgs(listing) + mapOf("amount" to notifier.money(listing.currency, price)))
+    }
+
     override fun expired(listing: Listing) {
         call(AuctionExpiredEvent(ListingSnapshot(listing)))
         notifier.tell(listing.sellerUuid, "expired", notifier.listingArgs(listing))
