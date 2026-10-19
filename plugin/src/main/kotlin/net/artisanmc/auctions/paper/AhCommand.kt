@@ -1,11 +1,12 @@
 package net.artisanmc.auctions.paper
 
 import net.artisanmc.auctions.api.ListingType
-import net.artisanmc.auctions.config.formatDuration
+import net.artisanmc.modules.api.playercommand.CommandArgument
+import net.artisanmc.modules.api.playercommand.PlayerCommandContext
+import net.artisanmc.modules.api.playercommand.PlayerCommandDeclaration
+import net.artisanmc.modules.api.playercommand.PlayerCommandExecutor
 import org.bukkit.Bukkit
-import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
-import org.bukkit.command.TabExecutor
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -13,86 +14,110 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 
 /**
- * `/ah`: the house for players, plus `/ah admin …`. Everything a player can do
- * here is also reachable from the menus.
+ * `/ah` and its subcommands, declared to Artisan: it parses, completes and checks the
+ * permission; the admin may rename `/ah`, add aliases, a cooldown or conditions with a
+ * `command_override/v1` file targeting [ID]. Everything a player can do here is also
+ * reachable from the menus.
  */
-class AhCommand(private val house: AuctionHouse, private val admin: AdminCommands) : TabExecutor {
-    override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
-        if (args.firstOrNull()?.lowercase() == "admin") return admin.run(sender, args.drop(1))
-        val p = sender as? Player ?: run { sender.sendMessage("Players only (or /$label admin …)"); return true }
-        if (!p.hasPermission(AuctionHouse.PERM_USE)) { house.notifier.tell(p, "no_permission"); return true }
-        when (args.firstOrNull()?.lowercase()) {
-            null -> house.open(p)
-            "sell" -> if (args.size < 2) house.sellStart(p, ListingType.SALE)
-                else house.sell(p, ListingType.SALE, args[1], null, null, args.getOrNull(2))
-            "auction" -> if (args.size < 2) house.sellStart(p, ListingType.AUCTION)
-                else house.sell(p, ListingType.AUCTION, args[1], args.getOrNull(2), args.getOrNull(3), args.getOrNull(4))
-            "search" -> house.open(p, AuctionHouse.MENU_MAIN, mapOf("search" to args.drop(1).joinToString(" ").filter { it != '"' && it != '\\' }))
-            "mine", "listings" -> house.open(p, AuctionHouse.MENU_MINE)
-            "claim", "claims", "box" -> house.open(p, AuctionHouse.MENU_CLAIMS)
-            else -> house.notifier.tell(p, "usage", mapOf("label" to label))
-        }
-        return true
+object AhCommand {
+    const val ID = "auctions:ah"
+
+    fun declaration(house: AuctionHouse, admin: AdminCommands): PlayerCommandDeclaration =
+        PlayerCommandDeclaration.builder(ID)
+            .name("ah")
+            .aliases("auctionhouse", "hdv")
+            .permission(AuctionHouse.PERM_USE)
+            .description(mapOf("en" to "Open the auction house", "fr" to "Ouvrir l'hôtel des ventes"))
+            .executor(player { p, _ -> house.open(p) })
+            .child(sub("sell", AuctionHouse.PERM_SELL)
+                .argument(CommandArgument.string("price").optional())
+                .argument(CommandArgument.string("currency").optional())
+                .executor(player { p, ctx ->
+                    val price = ctx.text("price")
+                    if (price == null) house.sellStart(p, ListingType.SALE)
+                    else house.sell(p, ListingType.SALE, price, null, null, ctx.text("currency"))
+                })
+                .build())
+            .child(sub("auction", AuctionHouse.PERM_SELL)
+                .argument(CommandArgument.string("start").optional())
+                .argument(CommandArgument.string("duration").optional())
+                .argument(CommandArgument.string("buy_now").optional())
+                .argument(CommandArgument.string("currency").optional())
+                .executor(player { p, ctx ->
+                    val start = ctx.text("start")
+                    if (start == null) house.sellStart(p, ListingType.AUCTION)
+                    else house.sell(p, ListingType.AUCTION, start, ctx.text("duration"), ctx.text("buy_now"), ctx.text("currency"))
+                })
+                .build())
+            .child(sub("search", AuctionHouse.PERM_USE)
+                .argument(CommandArgument.text("text"))
+                .executor(player { p, ctx ->
+                    val text = ctx.text("text").orEmpty().filter { it != '"' && it != '\\' }
+                    house.open(p, AuctionHouse.MENU_MAIN, mapOf("search" to text))
+                })
+                .build())
+            .child(sub("mine", AuctionHouse.PERM_USE).executor(player { p, _ -> house.open(p, AuctionHouse.MENU_MINE) }).build())
+            .child(sub("claim", AuctionHouse.PERM_USE).executor(player { p, _ -> house.open(p, AuctionHouse.MENU_CLAIMS) }).build())
+            .child(admin.declaration())
+            .build()
+
+    private fun sub(name: String, permission: String) =
+        PlayerCommandDeclaration.builder("auctions:$name").name(name).permission(permission)
+
+    /** Artisan refuses the console for these (not `consoleAllowed`): the player is there. */
+    private fun player(run: (Player, PlayerCommandContext) -> Unit) = PlayerCommandExecutor { ctx ->
+        ctx.player?.let { run(it, ctx) }
     }
 
-    override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): List<String> {
-        val subs = buildList {
-            addAll(listOf("sell", "auction", "search", "mine", "claim"))
-            if (sender.hasPermission(AuctionHouse.PERM_ADMIN)) add("admin")
-        }
-        return when {
-            args.size == 1 -> subs.filter { it.startsWith(args[0].lowercase()) }
-            args[0].equals("admin", true) && sender.hasPermission(AuctionHouse.PERM_ADMIN) -> admin.complete(args.drop(1))
-            args[0].equals("auction", true) && args.size == 3 -> house.config().auctions.durations
-                .map(::formatDuration).filter { it.startsWith(args[2]) }
-            (args[0].equals("sell", true) && args.size == 3) || (args[0].equals("auction", true) && args.size == 5) ->
-                house.config().currencies.allowed.filter { it.startsWith(args.last()) }
-            else -> emptyList()
-        }
-    }
+    fun PlayerCommandContext.text(name: String): String? = get(name, String::class.java)
 }
 
-/** `/ah admin cancel <id>`, `closeall [player]`, `reindex`. The importer adds `import`. */
-class AdminCommands(private val house: AuctionHouse) {
-    private val extra = LinkedHashMap<String, (CommandSender, List<String>) -> Unit>()
+/** `/ah admin cancel <id>`, `closeall [player]`, `reindex`, `import <source> [confirm]`. */
+class AdminCommands(private val house: AuctionHouse, private val imports: Imports) {
 
-    fun register(name: String, run: (CommandSender, List<String>) -> Unit) { extra[name] = run }
+    fun declaration(): PlayerCommandDeclaration = admin("admin")
+        .child(admin("admin.cancel")
+            .name("cancel")
+            .argument(CommandArgument.string("id"))
+            .executor { ctx -> ctx.player?.let { cancel(it, ctx.get("id", String::class.java).orEmpty()) } }
+            .build())
+        .child(admin("admin.closeall")
+            .name("closeall")
+            .argument(CommandArgument.string("player").optional())
+            .executor { ctx -> ctx.player?.let { closeAll(it, ctx.get("player", String::class.java)) } }
+            .build())
+        .child(admin("admin.reindex")
+            .name("reindex")
+            .consoleAllowed(true)
+            .executor { ctx -> reindex(ctx.sender) }
+            .build())
+        .child(admin("admin.import")
+            .name("import")
+            .consoleAllowed(true)
+            .argument(CommandArgument.choice("source", Imports.SOURCES))
+            .argument(CommandArgument.choice("confirm", listOf("confirm")).optional())
+            .executor { ctx -> imports.run(ctx.sender, ctx.get("source", String::class.java).orEmpty(), ctx.get("confirm", String::class.java) != null) }
+            .build())
+        .build()
 
-    fun run(sender: CommandSender, args: List<String>): Boolean {
-        if (!sender.hasPermission(AuctionHouse.PERM_ADMIN)) { sender.sendMessage("No permission"); return true }
-        when (val sub = args.firstOrNull()?.lowercase()) {
-            "cancel" -> {
-                val p = sender as? Player ?: return true.also { sender.sendMessage("Run it in game") }
-                val id = args.getOrNull(1)?.let(house::findListing)
-                    ?: return true.also { sender.sendMessage("Unknown or ambiguous listing id") }
-                house.cancel(p, id, admin = true)
-            }
-            "closeall" -> {
-                val p = sender as? Player ?: return true.also { sender.sendMessage("Run it in game") }
-                val seller = args.getOrNull(1)?.let { name ->
-                    Bukkit.getOfflinePlayerIfCached(name)?.uniqueId ?: return true.also { sender.sendMessage("Unknown player $name") }
-                }
-                sender.sendMessage("Cancelling ${house.cancelAll(p, seller)} listing(s); items go to the sellers' claims")
-            }
-            "reindex" -> {
-                sender.sendMessage("Reindexing price keys in the background…")
-                house.reindex { sender.sendMessage(it) }
-            }
-            null -> sender.sendMessage("/ah admin cancel <id> | closeall [player] | reindex" + extra.keys.joinToString("") { " | $it" })
-            else -> extra[sub]?.invoke(sender, args.drop(1)) ?: sender.sendMessage("Unknown admin command $sub")
-        }
-        return true
+    private fun admin(id: String) =
+        PlayerCommandDeclaration.builder("auctions:$id").name(id).permission(AuctionHouse.PERM_ADMIN)
+
+    fun cancel(p: Player, id: String) {
+        val listing = house.findListing(id) ?: return p.sendMessage("Unknown or ambiguous listing id")
+        house.cancel(p, listing, admin = true)
     }
 
-    fun complete(args: List<String>): List<String> = when (args.size) {
-        1 -> (listOf("cancel", "closeall", "reindex") + extra.keys).filter { it.startsWith(args[0].lowercase()) }
-        2 -> when (args[0].lowercase()) {
-            "cancel" -> house.cache.all().map { it.id.toString().take(8) }.filter { it.startsWith(args[1]) }
-            "import" -> Imports.SOURCES.filter { it.startsWith(args[1].lowercase()) }
-            else -> emptyList()
+    fun closeAll(p: Player, name: String?) {
+        val seller = name?.let {
+            Bukkit.getOfflinePlayerIfCached(it)?.uniqueId ?: return p.sendMessage("Unknown player $it")
         }
-        3 -> if (args[0].equals("import", true)) listOf("confirm") else emptyList()
-        else -> emptyList()
+        p.sendMessage("Cancelling ${house.cancelAll(p, seller)} listing(s); items go to the sellers' claims")
+    }
+
+    fun reindex(sender: CommandSender) {
+        sender.sendMessage("Reindexing price keys in the background…")
+        house.reindex { sender.sendMessage(it) }
     }
 }
 

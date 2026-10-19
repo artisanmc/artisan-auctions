@@ -3,7 +3,6 @@ package net.artisanmc.auctions.paper
 import net.artisanmc.auctions.market.ItemGiver
 import net.artisanmc.auctions.market.Threads
 import net.artisanmc.auctions.market.Wallets
-import net.artisanmc.modules.api.EconomyRegistry
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
@@ -43,7 +42,7 @@ class PaperThreads(private val plugin: Plugin) : Threads {
     }
 }
 
-class EconomyWallets(private val economy: EconomyRegistry) : Wallets {
+class EconomyWallets(private val economy: Currencies) : Wallets {
     override fun has(currency: String) = economy.has(currency)
 
     override fun balance(player: UUID, currency: String): BigDecimal =

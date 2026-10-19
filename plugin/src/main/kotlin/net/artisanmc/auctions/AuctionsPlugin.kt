@@ -7,6 +7,7 @@ import net.artisanmc.auctions.db.Migrations
 import net.artisanmc.auctions.paper.AdminCommands
 import net.artisanmc.auctions.paper.AhCommand
 import net.artisanmc.auctions.paper.AuctionHouse
+import net.artisanmc.auctions.paper.Currencies
 import net.artisanmc.auctions.paper.Imports
 import net.artisanmc.auctions.paper.PlayerListener
 import net.artisanmc.auctions.project.ProjectBootstrap
@@ -28,8 +29,8 @@ class AuctionsPlugin : JavaPlugin() {
 
     override fun onEnable() {
         val api = server.servicesManager.getRegistration(ArtisanAPI::class.java)?.provider
-        if (api == null || !hasRequiredApi(api)) {
-            logger.severe("ArtisanAuctions needs Artisan with the API $MIN_CORE_API or newer (currencies and menu refresh)")
+        if (api == null || !api.isCompatibleWith(MIN_CORE_API)) {
+            logger.severe("ArtisanAuctions needs Artisan with the API $MIN_CORE_API or newer (found: ${api?.apiVersion ?: "no Artisan"})")
             server.pluginManager.disablePlugin(this)
             return
         }
@@ -44,23 +45,23 @@ class AuctionsPlugin : JavaPlugin() {
             return
         }
 
-        val projectDir = File(dataFolder, "editor")
-        api.projectRoots.register(AuctionsModule.PROJECT_ID, projectDir, AuctionsModule.ID)
+        // plugins/Artisan/modules/auctions/: menus, dialogs, texts and settings, edited in the editor.
+        val legacy = File(dataFolder, AuctionsModule.LEGACY_PROJECT_DIR).takeIf { it.isDirectory }
+        val projectDir = api.projectRoots.moduleFolder(AuctionsModule.PROJECT_ID, AuctionsModule.ID, legacy)
         if (ProjectBootstrap(::getResource).writeIfAbsent(projectDir)) {
-            // The core read its roots before this plugin started.
             api.project.reload()
             logger.info("Default auction house Project written to ${projectDir.path}")
         }
 
-        val house = AuctionHouse(this, api, serverId, AuctionStore(dataSource)) { configStore.current }
+        val currencies = Currencies(server.servicesManager)
+        val house = AuctionHouse(this, api, serverId, AuctionStore(dataSource), currencies) { configStore.current }
         this.house = house
-        api.modules.register(AuctionsModule(configStore, logger) { house })
+        val admin = AdminCommands(house, Imports(this, house, currencies))
+        api.modules.register(AuctionsModule(configStore, currencies, logger) { house })
+        // Outside the module's onEnable: owned by this plugin, removed when it disables.
+        api.playerCommands.register(AhCommand.declaration(house, admin))
         server.servicesManager.register(AuctionsService::class.java, AuctionsServiceImpl(configStore, house), this, ServicePriority.Normal)
 
-        val admin = AdminCommands(house)
-        val imports = Imports(this, house, api.economy)
-        admin.register("import", imports::run)
-        getCommand("ah")?.let { cmd -> AhCommand(house, admin).also { cmd.setExecutor(it); cmd.tabCompleter = it } }
         server.pluginManager.registerEvents(PlayerListener(house), this)
         house.start()
         server.scheduler.runTaskTimer(this, Runnable { house.tick() }, EXPIRY_TICKS, EXPIRY_TICKS)
@@ -72,18 +73,6 @@ class AuctionsPlugin : JavaPlugin() {
         house?.stop()
         house = null
         server.servicesManager.unregisterAll(this)
-    }
-
-    /**
-     * `coreVersion` is the plugin build number, not the API's SemVer: the members
-     * this add-on needs are probed instead. An older core has no such getters.
-     */
-    private fun hasRequiredApi(api: ArtisanAPI): Boolean = try {
-        api.economy
-        api.menus
-        true
-    } catch (e: NoSuchMethodError) {
-        false
     }
 
     /**
@@ -101,8 +90,8 @@ class AuctionsPlugin : JavaPlugin() {
     }
 
     companion object {
-        /** First API with api.economy and api.menus. */
-        const val MIN_CORE_API = "1.8.0"
+        /** First API with module folders (`projectRoots.moduleFolder`); player commands since 2.7.0. */
+        const val MIN_CORE_API = "2.8.0"
         /** Ends due listings every 5 s. */
         const val EXPIRY_TICKS = 100L
         /** Purges claims past their retention every hour. */

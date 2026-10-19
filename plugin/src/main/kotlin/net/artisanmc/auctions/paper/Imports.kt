@@ -7,7 +7,6 @@ import net.artisanmc.auctions.importer.ItemTranscoder
 import net.artisanmc.auctions.importer.ZahV3Reader
 import net.artisanmc.auctions.importer.ZahV4Reader
 import net.artisanmc.auctions.median.PriceKeys
-import net.artisanmc.modules.api.EconomyRegistry
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.inventory.ItemStack
@@ -26,16 +25,14 @@ import java.util.logging.Level
 import java.util.zip.GZIPInputStream
 
 /**
- * `/ah admin import <zauctionhouse|zauctionhouse-v3> [confirm]`. Reads the
+ * `/ah admin import <zauctionhouse|zauctionhouse-v3> [confirm]` (see [AdminCommands]). Reads the
  * source read-only, from its own settings; without `confirm` it is a dry run.
  */
-class Imports(private val plugin: Plugin, private val house: AuctionHouse, private val economy: EconomyRegistry) {
+class Imports(private val plugin: Plugin, private val house: AuctionHouse, private val economy: Currencies) {
     private val plugins = plugin.dataFolder.parentFile
     @Volatile private var running = false
 
-    fun run(sender: CommandSender, args: List<String>) {
-        val which = args.firstOrNull()?.lowercase()
-        val confirm = args.getOrNull(1).equals("confirm", ignoreCase = true)
+    fun run(sender: CommandSender, which: String, confirm: Boolean) {
         if (which !in SOURCES) return sender.sendMessage("/ah admin import <${SOURCES.joinToString("|")}> [confirm]")
         Bukkit.getPluginManager().plugins.firstOrNull { it.isEnabled && it.name.startsWith("zAuctionHouse", ignoreCase = true) }?.let {
             return sender.sendMessage("${it.name} is running: remove it and restart first, or items could be taken on both sides.")
@@ -45,7 +42,7 @@ class Imports(private val plugin: Plugin, private val house: AuctionHouse, priva
         sender.sendMessage("${if (confirm) "Importing" else "Dry run of"} $which…")
         Bukkit.getScheduler().runTaskAsynchronously(plugin, Runnable {
             val lines = try {
-                val source = source(which!!)
+                val source = source(which)
                 val importer = Importer(house.server, house.store, transcoder(), ::currency)
                 val report = importer.run(source.id, source.read(), dryRun = !confirm)
                 if (!report.dryRun) {

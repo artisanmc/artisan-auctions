@@ -42,7 +42,7 @@ class EventHooks(
     private val notifier: ProjectNotifier,
     private val median: (ListRequest) -> BigDecimal? = { null },
     private val onSold: (Listing) -> Unit = {},
-    private val listingsChanged: () -> Unit,
+    private val listingsChanged: (UUID) -> Unit,
     private val claimsChanged: (Set<UUID>) -> Unit,
 ) : Hooks {
     private fun call(e: Event) = Bukkit.getPluginManager().callEvent(e)
@@ -74,7 +74,7 @@ class EventHooks(
 
     override fun listed(listing: Listing) {
         call(AuctionListedEvent(ListingSnapshot(listing)))
-        listingsChanged()
+        listingsChanged(listing.id)
     }
 
     override fun sold(listing: Listing, buyer: UUID, price: BigDecimal, tax: BigDecimal) {
@@ -82,14 +82,14 @@ class EventHooks(
         call(AuctionSoldEvent(ListingSnapshot(listing), buyer, price, tax))
         notifier.tell(listing.sellerUuid, "sold", notifier.listingArgs(listing) +
             mapOf("buyer" to (Bukkit.getOfflinePlayer(buyer).name ?: "?"), "net" to notifier.money(listing.currency, price - tax)))
-        listingsChanged()
+        listingsChanged(listing.id)
     }
 
     override fun bidPlaced(listing: Listing, bidder: UUID, amount: BigDecimal) {
         call(AuctionBidPlacedEvent(ListingSnapshot(listing), bidder, amount))
         notifier.tell(listing.sellerUuid, "bid_received", notifier.listingArgs(listing) +
             mapOf("bidder" to (Bukkit.getOfflinePlayer(bidder).name ?: "?"), "amount" to notifier.money(listing.currency, amount)))
-        listingsChanged()
+        listingsChanged(listing.id)
     }
 
     override fun outbid(listing: Listing, previous: UUID, amount: BigDecimal) {
@@ -104,13 +104,13 @@ class EventHooks(
     override fun expired(listing: Listing) {
         call(AuctionExpiredEvent(ListingSnapshot(listing)))
         notifier.tell(listing.sellerUuid, "expired", notifier.listingArgs(listing))
-        listingsChanged()
+        listingsChanged(listing.id)
     }
 
     override fun cancelled(listing: Listing, actor: UUID) {
         call(AuctionCancelledEvent(ListingSnapshot(listing), actor))
         if (actor != listing.sellerUuid) notifier.tell(listing.sellerUuid, "cancelled_by_admin", notifier.listingArgs(listing))
-        listingsChanged()
+        listingsChanged(listing.id)
     }
 
     override fun claimed(claim: Claim) {
