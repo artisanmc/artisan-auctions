@@ -10,7 +10,7 @@ import net.artisanmc.auctions.paper.AuctionHouse
 import net.artisanmc.auctions.paper.Currencies
 import net.artisanmc.auctions.paper.Imports
 import net.artisanmc.auctions.paper.PlayerListener
-import net.artisanmc.auctions.project.ProjectBootstrap
+import net.artisanmc.auctions.files.DefaultFiles
 import net.artisanmc.modules.api.ArtisanAPI
 import org.bukkit.plugin.ServicePriority
 import org.bukkit.plugin.java.JavaPlugin
@@ -46,11 +46,11 @@ class AuctionsPlugin : JavaPlugin() {
         }
 
         // plugins/Artisan/modules/auctions/: menus, dialogs, texts and settings, edited in the editor.
-        val legacy = File(dataFolder, AuctionsModule.LEGACY_PROJECT_DIR).takeIf { it.isDirectory }
-        val projectDir = api.projectRoots.moduleFolder(AuctionsModule.PROJECT_ID, AuctionsModule.ID, legacy)
-        if (ProjectBootstrap(::getResource).writeIfAbsent(projectDir)) {
+        val legacy = File(dataFolder, AuctionsModule.LEGACY_DIR).takeIf { it.isDirectory }
+        val folder = api.projectRoots.moduleFolder(AuctionsModule.FOLDER, AuctionsModule.ID, legacy)
+        if (DefaultFiles(::getResource).writeIfEmpty(folder)) {
             api.project.reload()
-            logger.info("Default auction house Project written to ${projectDir.path}")
+            logger.info("Default auction house files written to ${folder.path}")
         }
 
         val currencies = Currencies(server.servicesManager)

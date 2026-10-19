@@ -11,7 +11,7 @@ import net.artisanmc.modules.api.datasource.Stability
 /**
  * `auctions:settings`: one row describing what the house allows right now.
  * The default menus hide their type tabs and pick their dialogs with it, so the
- * same Project fits "sales only", "auctions only" and "both".
+ * same menus fit "sales only", "auctions only" and "both".
  */
 object SettingsSource {
     const val REF = "auctions:settings"

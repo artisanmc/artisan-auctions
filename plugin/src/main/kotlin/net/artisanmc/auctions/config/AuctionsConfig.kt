@@ -4,7 +4,7 @@ import java.math.BigDecimal
 import java.time.Duration
 
 /**
- * `data/config.yaml` of the add-on's Project, edited by the "Settings" config
+ * `data/config.yaml` of the module's folder, edited by the "Settings" config
  * screen (model `auctions:config`). Every key is optional: a missing one takes
  * the default below, which is also what the bootstrap file contains.
  */

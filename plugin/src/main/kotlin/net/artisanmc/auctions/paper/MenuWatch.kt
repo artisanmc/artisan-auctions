@@ -14,13 +14,13 @@ import java.util.concurrent.ConcurrentHashMap
  * grid goes back to the first, so only menus where that is harmless are repainted.
  * A player in a dialog has no menu open and is left alone.
  */
-class MenuWatch(private val menus: MenuApi, private val project: String) {
+class MenuWatch(private val menus: MenuApi, private val folder: String) {
     private val opened = ConcurrentHashMap<UUID, Pair<String, Map<String, Any>>>()
     private var subscription: MenuSubscription? = null
 
     fun start() {
         subscription = menus.onOpen { e ->
-            if (e.menu.projectId == project) opened[e.player.uniqueId] = e.menu.menuId to HashMap(e.args)
+            if (e.menu.projectId == folder) opened[e.player.uniqueId] = e.menu.menuId to HashMap(e.args)
         }
     }
 
@@ -35,7 +35,7 @@ class MenuWatch(private val menus: MenuApi, private val project: String) {
     }
 
     /** The house menu [p] has open, or null. */
-    fun viewing(p: Player): String? = menus.openMenu(p)?.takeIf { it.projectId == project }?.menuId
+    fun viewing(p: Player): String? = menus.openMenu(p)?.takeIf { it.projectId == folder }?.menuId
 
     fun args(p: Player): Map<String, Any> = opened[p.uniqueId]?.takeIf { it.first == viewing(p) }?.second.orEmpty()
 
@@ -43,6 +43,6 @@ class MenuWatch(private val menus: MenuApi, private val project: String) {
     fun repaint(p: Player, menuIds: Collection<String>, where: (Map<String, Any>) -> Boolean = { true }) {
         val id = viewing(p)?.takeIf { it in menuIds } ?: return
         val args = args(p)
-        if (where(args)) menus.open(p, MenuRef(project, id), args)
+        if (where(args)) menus.open(p, MenuRef(folder, id), args)
     }
 }

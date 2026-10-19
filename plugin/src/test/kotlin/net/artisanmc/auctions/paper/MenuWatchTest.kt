@@ -48,7 +48,7 @@ class MenuWatchTest {
         assertEquals(listOf(lot to mapOf<String, Any>("id" to "abc")), menus.opened)
     }
 
-    @Test fun `another menu, another project or a closed menu is left alone`() {
+    @Test fun `another menu, another folder or a closed menu is left alone`() {
         val menus = FakeMenus()
         val watch = MenuWatch(menus, "auctions")
         watch.start()
