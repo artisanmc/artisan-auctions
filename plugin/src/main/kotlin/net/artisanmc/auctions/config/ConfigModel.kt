@@ -91,6 +91,11 @@ object ConfigModel {
                 num("warn_below", "Warn below (× median)", 0.5),
                 num("warn_above", "Warn above (× median)", 3.0),
             ),
+            obj("import", "Import from other plugins",
+                field("currency_map", mapOf("kind" to "map", "of" to mapOf("kind" to "string")), "Currency names",
+                    help = "Source currency name → currency id here, e.g. VAULT: vault. Same names map themselves.",
+                    default = emptyMap<String, String>()),
+            ),
         ),
     )
 

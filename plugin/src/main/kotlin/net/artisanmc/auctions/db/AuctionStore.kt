@@ -33,7 +33,9 @@ class AuctionStore(private val ds: DataSource) {
 
     // ── Listings ─────────────────────────────────────────────────────────────
 
-    fun insertListing(l: Listing) = tx { c ->
+    fun insertListing(l: Listing) = tx { c -> insertListing(c, l) }
+
+    private fun insertListing(c: Connection, l: Listing) {
         c.prepareStatement(
             "INSERT INTO auc_listings (id, server, listing_type, status, seller_uuid, seller_name, currency, price, " +
                 "start_price, current_bid, current_bidder, bid_count, created_at, ends_at, row_version) " +
@@ -152,6 +154,40 @@ class AuctionStore(private val ds: DataSource) {
                 buildList { while (rs.next()) add(Triple(UUID.fromString(rs.getString(1)), rs.getBigDecimal(2), rs.getString(3))) }
             }
         }
+    }
+
+    // ── Imports ──────────────────────────────────────────────────────────────
+
+    /** Source ids of [source] already imported. */
+    fun importedIds(source: String): Set<String> = read { c ->
+        c.prepareStatement("SELECT source_id FROM auc_import_map WHERE source = ?").use { s ->
+            s.setString(1, source)
+            s.executeQuery().use { rs -> buildSet { while (rs.next()) add(rs.getString(1)) } }
+        }
+    }
+
+    /**
+     * Writes one imported record and its `auc_import_map` row in one transaction.
+     * False when [sourceId] was already imported: replaying an import skips it.
+     */
+    fun importRecord(
+        source: String, sourceId: String, target: UUID, now: Long,
+        listing: Listing? = null, claims: List<Claim> = emptyList(), sales: List<Sale> = emptyList(),
+    ): Boolean = tx { c ->
+        val fresh = c.prepareStatement("SELECT 1 FROM auc_import_map WHERE source = ? AND source_id = ?").use { s ->
+            s.setString(1, source); s.setString(2, sourceId)
+            s.executeQuery().use { rs -> !rs.next() }
+        }
+        if (!fresh) return@tx false
+        // The primary key makes a concurrent replay fail here rather than write twice.
+        c.prepareStatement("INSERT INTO auc_import_map (source, source_id, target_id, imported_at) VALUES (?, ?, ?, ?)").use { s ->
+            s.setString(1, source); s.setString(2, sourceId); s.setString(3, target.toString()); s.setLong(4, now)
+            s.executeUpdate()
+        }
+        listing?.let { insertListing(c, it) }
+        insertClaims(c, claims)
+        insertSales(c, sales)
+        true
     }
 
     // ── Reindexing price keys ────────────────────────────────────────────────
