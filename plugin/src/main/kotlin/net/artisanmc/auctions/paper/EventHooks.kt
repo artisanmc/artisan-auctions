@@ -40,7 +40,8 @@ class ListingSnapshot(private val l: Listing) : AuctionListing {
  */
 class EventHooks(
     private val notifier: ProjectNotifier,
-    private val median: (Listing?, ListRequest?) -> BigDecimal? = { _, _ -> null },
+    private val median: (ListRequest) -> BigDecimal? = { null },
+    private val onSold: (Listing) -> Unit = {},
     private val listingsChanged: () -> Unit,
     private val claimsChanged: (Set<UUID>) -> Unit,
 ) : Hooks {
@@ -52,7 +53,7 @@ class EventHooks(
         val seller = Bukkit.getPlayer(request.seller) ?: return request to null
         val stacks = request.items.mapNotNull { PaperItems.decodeOrNull(it.blob) }
         val e = AuctionPreListEvent(seller, stacks, request.type, request.currency,
-            request.price, request.startPrice, request.duration, median(null, request))
+            request.price, request.startPrice, request.duration, median(request))
         call(e)
         veto(e)?.let { return null to it }
         return request.copy(price = e.price().orElse(null), startPrice = e.startPrice().orElse(null), duration = e.duration()) to null
@@ -77,6 +78,7 @@ class EventHooks(
     }
 
     override fun sold(listing: Listing, buyer: UUID, price: BigDecimal, tax: BigDecimal) {
+        onSold(listing)
         call(AuctionSoldEvent(ListingSnapshot(listing), buyer, price, tax))
         notifier.tell(listing.sellerUuid, "sold", notifier.listingArgs(listing) +
             mapOf("buyer" to (Bukkit.getOfflinePlayer(buyer).name ?: "?"), "net" to notifier.money(listing.currency, price - tax)))

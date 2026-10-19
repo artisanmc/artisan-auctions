@@ -5,6 +5,7 @@ body:
   - { type: text, text: { en: "<white>{quantity}× {item_name}", fr: "<white>{quantity}× {item_name}" } }
   - { type: text, text: { en: "<gray>Listed for {sale_duration}. Listing fee: {fee}. Sale tax: {tax}.", fr: "<gray>En vente pendant {sale_duration}. Frais de mise en vente : {fee}. Taxe sur la vente : {tax}." } }
   - { type: text, text: { en: "<gray>Price in {currency}, for the whole stack.", fr: "<gray>Prix en {currency}, pour toute la pile." } }
+  - { type: text, text: { en: "<gray>Median price: <gold>{median}<gray> each, over {median_sales} sales in {median_days} days.", fr: "<gray>Prix médian : <gold>{median}<gray> l'unité, sur {median_sales} ventes en {median_days} jours." } }
 inputs:
   - { id: price, type: text, label: { en: "Price", fr: "Prix" }, default: "", max_length: 16 }
 buttons:

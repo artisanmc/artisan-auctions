@@ -139,6 +139,7 @@ elements:
       - { en: "<gray>Price: <gold>{l.price_display}", fr: "<gray>Prix : <gold>{l.price_display}" }
       - { en: "<gray>Seller: <white>{l.seller}", fr: "<gray>Vendeur : <white>{l.seller}" }
       - { en: "<gray>Ends in: <white>{l.ends_at.until()}", fr: "<gray>Fin dans : <white>{l.ends_at.until()}" }
+      - { en: "{l.has_median ? \"<gray>Median: <white>\" : \"\"}{l.has_median ? l.median_display : \"\"}{l.has_median ? \" <gray>each (\" : \"\"}{l.has_median ? l.median_ratio_display : \"\"}{l.has_median ? \"<gray>)\" : \"\"}", fr: "{l.has_median ? \"<gray>Médiane : <white>\" : \"\"}{l.has_median ? l.median_display : \"\"}{l.has_median ? \" <gray>l'unité (\" : \"\"}{l.has_median ? l.median_ratio_display : \"\"}{l.has_median ? \"<gray>)\" : \"\"}" }
       - ""
       - { en: "<yellow>Click to buy", fr: "<yellow>Cliquer pour acheter" }
     click:
@@ -153,6 +154,7 @@ elements:
           - ""
           - { en: "<gray>Price: <gold>{l.price_display}", fr: "<gray>Prix : <gold>{l.price_display}" }
           - { en: "<gray>Ends in: <white>{l.ends_at.until()}", fr: "<gray>Fin dans : <white>{l.ends_at.until()}" }
+          - { en: "{l.has_median ? \"<gray>Median: <white>\" : \"\"}{l.has_median ? l.median_display : \"\"}{l.has_median ? \" <gray>each (\" : \"\"}{l.has_median ? l.median_ratio_display : \"\"}{l.has_median ? \"<gray>)\" : \"\"}", fr: "{l.has_median ? \"<gray>Médiane : <white>\" : \"\"}{l.has_median ? l.median_display : \"\"}{l.has_median ? \" <gray>l'unité (\" : \"\"}{l.has_median ? l.median_ratio_display : \"\"}{l.has_median ? \"<gray>)\" : \"\"}" }
           - ""
           - { en: "<aqua>Your listing", fr: "<aqua>Votre annonce" }
           - { en: "<red>Right-click to withdraw it", fr: "<red>Clic droit pour la retirer" }
@@ -170,6 +172,7 @@ elements:
           - { en: "<gray>Next bid from: <yellow>{l.min_bid_display}", fr: "<gray>Prochaine offre dès : <yellow>{l.min_bid_display}" }
           - { en: "<gray>Seller: <white>{l.seller}", fr: "<gray>Vendeur : <white>{l.seller}" }
           - { en: "<gray>Ends in: <white>{l.ends_at.until()}", fr: "<gray>Fin dans : <white>{l.ends_at.until()}" }
+          - { en: "{l.has_median ? \"<gray>Median: <white>\" : \"\"}{l.has_median ? l.median_display : \"\"}{l.has_median ? \" <gray>each (\" : \"\"}{l.has_median ? l.median_ratio_display : \"\"}{l.has_median ? \"<gray>)\" : \"\"}", fr: "{l.has_median ? \"<gray>Médiane : <white>\" : \"\"}{l.has_median ? l.median_display : \"\"}{l.has_median ? \" <gray>l'unité (\" : \"\"}{l.has_median ? l.median_ratio_display : \"\"}{l.has_median ? \"<gray>)\" : \"\"}" }
           - ""
           - { en: "{l.leading ? \"<green>You hold the best bid\" : \"<yellow>Click to bid\"}", fr: "{l.leading ? \"<green>Vous avez la meilleure offre\" : \"<yellow>Cliquer pour enchérir\"}" }
           - { en: "{l.buy_now ? \"<yellow>Shift-click: buy now for \" : \"\"}{l.buy_now ? l.buy_now_display : \"\"}", fr: "{l.buy_now ? \"<yellow>Maj-clic : achat immédiat à \" : \"\"}{l.buy_now ? l.buy_now_display : \"\"}" }

@@ -54,7 +54,7 @@ class AuctionsPlugin : JavaPlugin() {
         val house = AuctionHouse(this, api, serverId, AuctionStore(dataSource)) { configStore.current }
         this.house = house
         api.modules.register(AuctionsModule(configStore, logger) { house })
-        server.servicesManager.register(AuctionsService::class.java, AuctionsServiceImpl(configStore), this, ServicePriority.Normal)
+        server.servicesManager.register(AuctionsService::class.java, AuctionsServiceImpl(configStore, house), this, ServicePriority.Normal)
 
         val admin = AdminCommands(house)
         getCommand("ah")?.let { cmd -> AhCommand(house, admin).also { cmd.setExecutor(it); cmd.tabCompleter = it } }

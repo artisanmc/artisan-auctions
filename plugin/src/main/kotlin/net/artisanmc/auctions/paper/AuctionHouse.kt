@@ -13,6 +13,10 @@ import net.artisanmc.auctions.market.ListingCache
 import net.artisanmc.auctions.market.ListingItem
 import net.artisanmc.auctions.market.Market
 import net.artisanmc.auctions.market.SellRules
+import net.artisanmc.auctions.median.MedianCache
+import net.artisanmc.auctions.median.MedianMath
+import net.artisanmc.auctions.median.MedianPrice
+import net.artisanmc.auctions.median.PriceKeys
 import net.artisanmc.auctions.sources.ListingRows
 import net.artisanmc.modules.api.ArtisanAPI
 import org.bukkit.Bukkit
@@ -42,7 +46,11 @@ class AuctionHouse(
     val claims = ClaimBox(server, store, threads, config, logger) { owner ->
         Bukkit.getPlayer(owner)?.let { p -> if (api.menus.openMenuId(p) == MENU_CLAIMS) api.menus.refresh(p) }
     }
-    val hooks = EventHooks(notifier, listingsChanged = ::scheduleRefresh, claimsChanged = { owners ->
+    val medians = MedianCache(store, threads, config, logger, loaded = ::scheduleRefresh)
+    val hooks = EventHooks(notifier,
+        median = { r -> r.items.map { it.priceKey }.distinct().singleOrNull()?.let { medians.get(it, r.currency)?.price } },
+        onSold = { l -> l.sharedPriceKey?.let { medians.invalidate(it, l.currency) } },
+        listingsChanged = ::scheduleRefresh, claimsChanged = { owners ->
         owners.filter { Bukkit.getPlayer(it) != null }.forEach { claims.reload(it) }
     })
     val delivery = ClaimDelivery(store, threads, wallets, InventoryGiver(), { hooks }, logger)
@@ -51,6 +59,8 @@ class AuctionHouse(
     /** The item a player is about to sell, remembered while the price dialog is open. */
     private data class Pending(val slot: Int, val stack: ItemStack, val type: ListingType?)
     private val pending = HashMap<UUID, Pending>()
+    /** A listing waiting for the seller to confirm a price far from the median. */
+    private val confirmations = HashMap<UUID, () -> Unit>()
 
     fun start() {
         market.start { Bukkit.getOnlinePlayers().forEach { join(it) } }
@@ -58,6 +68,7 @@ class AuctionHouse(
 
     fun stop() {
         pending.clear()
+        confirmations.clear()
         threads.shutdown()
     }
 
@@ -93,6 +104,7 @@ class AuctionHouse(
 
     fun quit(p: Player) {
         pending.remove(p.uniqueId)
+        confirmations.remove(p.uniqueId)
         claims.forget(p.uniqueId)
     }
 
@@ -147,8 +159,21 @@ class AuctionHouse(
             "default_duration" to formatDuration(c.auctions.defaultDuration),
             "sale_duration" to formatDuration(c.sales.duration),
             "type" to (type?.id() ?: ""),
-        )
+        ) + medianArgs(medianOf(stack, c.currencies.default), c.currencies.default)
     }
+
+    /** The cached median of [stack] in [currency]; starts computing it when unknown. */
+    fun medianOf(stack: ItemStack, currency: String): MedianPrice? = medians.get(priceKey(stack), currency)
+
+    /** Median of a listing's item; a mixed lot has none. */
+    fun medianOf(l: net.artisanmc.auctions.market.Listing): MedianPrice? = l.sharedPriceKey?.let { medians.get(it, l.currency) }
+
+    fun medianArgs(m: MedianPrice?, currency: String): Map<String, Any> = mapOf(
+        "has_median" to (m?.price != null),
+        "median" to (m?.price?.let { notifier.money(currency, it) } ?: "-"),
+        "median_sales" to (m?.sales ?: 0),
+        "median_days" to (m?.windowDays ?: config().median.window.days),
+    )
 
     private fun problemWithItem(p: Player, stack: ItemStack): String? {
         if (SellRules.forbidden(stack.type.name, PaperItems.plainLore(stack), config().items)) return "forbidden_item"
@@ -160,7 +185,7 @@ class AuctionHouse(
      * Uses the item remembered by [sellStart] when it is still in its slot,
      * else the held item (direct `/ah sell`).
      */
-    fun sell(p: Player, type: ListingType, price: String?, duration: String?, buyout: String?, currencyArg: String?) {
+    fun sell(p: Player, type: ListingType, price: String?, duration: String?, buyout: String?, currencyArg: String?, force: Boolean = false) {
         val c = config()
         if (!p.hasPermission(PERM_SELL)) return notifier.tell(p, "no_permission")
         val amount = price?.let(Fees::parseAmount) ?: return notifier.tell(p, "bad_amount", mapOf("input" to (price ?: "")))
@@ -196,6 +221,26 @@ class AuctionHouse(
         request = changed
         market.check(request)?.let { return notifier.tell(p, it.key, display(it.args, currency)) }
 
+        // Far from the median: ask once, the seller stays free to confirm.
+        val median = medians.get(item.priceKey, currency)?.price
+        val asked = request.price.takeIf { type == ListingType.SALE } ?: request.startPrice
+        if (!force && median != null && asked != null) {
+            val unit = asked.divide(BigDecimal(stack.amount), 4, java.math.RoundingMode.HALF_UP)
+            val m = c.median
+            if (unit < median * m.warnBelow || unit > median * m.warnAbove) {
+                remembered?.let { pending[p.uniqueId] = it }
+                confirmations[p.uniqueId] = { sell(p, type, price, duration, buyout, currencyArg, force = true) }
+                notifier.openDialog(p, DIALOG_PRICE_WARNING, mapOf(
+                    "item_name" to (item.display["title"] ?: ListingRows.prettyMaterial(stack.type.name)),
+                    "quantity" to stack.amount,
+                    "price" to notifier.money(currency, asked),
+                    "unit_price" to notifier.money(currency, unit),
+                    "ratio" to ListingRows.ratioText(MedianMath.ratio(unit, median)),
+                ) + medianArgs(medians.get(item.priceKey, currency), currency))
+                return
+            }
+        }
+
         // Take the item now; it comes back if the listing cannot be written.
         val taken = stack.clone()
         p.inventory.setItem(slot, null)
@@ -208,6 +253,11 @@ class AuctionHouse(
         }
     }
 
+    /** `auctions:sell_confirm`: the seller accepts a price far from the median. */
+    fun confirmSell(p: Player) {
+        confirmations.remove(p.uniqueId)?.invoke() ?: notifier.tell(p, "item_changed")
+    }
+
     /** Back to the player, or at their feet if the inventory filled meanwhile. */
     private fun giveBack(owner: UUID, stack: ItemStack) {
         val p = Bukkit.getPlayer(owner)
@@ -218,8 +268,7 @@ class AuctionHouse(
         p.inventory.addItem(stack).values.forEach { p.world.dropItemNaturally(p.location, it) }
     }
 
-    /** Placeholder until the median's item identity is wired: the material. */
-    fun priceKey(stack: ItemStack): String = "vanilla:" + stack.type.key.key
+    fun priceKey(stack: ItemStack): String = PriceKeys.of(PaperFacts.of(stack), config().median)
 
     /** BigDecimal args become amounts written in the listing's currency. */
     fun display(args: Map<String, Any>, currency: String): Map<String, Any> =
@@ -291,6 +340,48 @@ class AuctionHouse(
         return matches.singleOrNull()?.id
     }
 
+    /**
+     * Recomputes every price key from the stored items, after a change of the
+     * median settings. Runs in the background; [report] gets progress lines.
+     */
+    fun reindex(report: (String) -> Unit) {
+        val median = config().median
+        threads.async {
+            var after = ""
+            var listings = 0
+            var changed = 0
+            var unreadable = 0
+            while (true) {
+                val page = runCatching { store.listingsPage(server, after, 200) }.getOrElse {
+                    logger.log(Level.WARNING, "[Auctions] reindex stopped", it)
+                    threads.main { report("Reindex stopped: ${it.message}") }
+                    return@async
+                }
+                if (page.isEmpty()) break
+                for (l in page) {
+                    val keys = l.items.associate { item ->
+                        val stack = PaperItems.decodeOrNull(item.blob)
+                        if (stack == null) unreadable++
+                        item.slot to (stack?.let { PriceKeys.of(PaperFacts.of(it), median) } ?: item.priceKey)
+                    }
+                    if (keys.any { (slot, key) -> l.items.first { it.slot == slot }.priceKey != key }) {
+                        runCatching { store.updatePriceKeys(l.id, keys, keys.values.distinct().singleOrNull()) }
+                            .onFailure { e -> logger.log(Level.WARNING, "[Auctions] reindex of ${l.id} failed", e) }
+                            .onSuccess { changed++ }
+                    }
+                }
+                listings += page.size
+                after = page.last().id.toString()
+            }
+            val active = runCatching { store.activeListings(server) }.getOrNull()
+            threads.main {
+                active?.let(cache::replaceAll)
+                medians.clear()
+                report("Reindexed $listings listing(s): $changed changed, $unreadable unreadable item(s) kept their key")
+            }
+        }
+    }
+
     // ── Periodic work ────────────────────────────────────────────────────────
 
     fun tick() {
@@ -323,6 +414,7 @@ class AuctionHouse(
         const val DIALOG_SELL_TYPE = "ah_sell_type"
         const val DIALOG_SELL_FIXED = "ah_sell_fixed"
         const val DIALOG_SELL_AUCTION = "ah_sell_auction"
+        const val DIALOG_PRICE_WARNING = "ah_price_warning"
 
         const val PERM_USE = "auctions.use"
         const val PERM_SELL = "auctions.sell"
