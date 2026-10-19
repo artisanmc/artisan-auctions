@@ -110,6 +110,50 @@ class AuctionStore(private val ds: DataSource) {
         true
     }
 
+    /**
+     * Records a bid on an active auction still at [expectedVersion]: the listing
+     * takes the new leader, end and bid count, the bid is held, the previous held
+     * bid is released through [outbid] (its refund), and the bidder's [payment]
+     * is settled. False (nothing written) when someone changed the listing first.
+     */
+    fun placeBid(
+        id: UUID, expectedVersion: Int, bidId: UUID, bidder: UUID, currency: String, amount: BigDecimal,
+        endsAt: Long, now: Long, outbid: Claim?, payment: UUID,
+    ): Boolean = tx { c ->
+        val changed = c.prepareStatement(
+            "UPDATE auc_listings SET current_bid = ?, current_bidder = ?, bid_count = bid_count + 1, ends_at = ?, " +
+                "row_version = row_version + 1 WHERE id = ? AND status = 'active' AND row_version = ?",
+        ).use { s ->
+            s.setAmount(1, amount); s.setString(2, bidder.toString()); s.setLong(3, endsAt)
+            s.setString(4, id.toString()); s.setInt(5, expectedVersion)
+            s.executeUpdate()
+        }
+        if (changed != 1) return@tx false
+        c.prepareStatement("UPDATE auc_bids SET state = 'refunded' WHERE listing_id = ? AND state = 'held'").use { s ->
+            s.setString(1, id.toString()); s.executeUpdate()
+        }
+        c.prepareStatement(
+            "INSERT INTO auc_bids (id, listing_id, bidder_uuid, currency, amount, state, created_at) VALUES (?, ?, ?, ?, ?, 'held', ?)",
+        ).use { s ->
+            s.setString(1, bidId.toString()); s.setString(2, id.toString()); s.setString(3, bidder.toString())
+            s.setString(4, currency); s.setAmount(5, amount); s.setLong(6, now)
+            s.executeUpdate()
+        }
+        if (outbid != null) insertClaims(c, listOf(outbid))
+        setPaymentState(c, payment, PaymentState.SETTLED)
+        true
+    }
+
+    /** Bids of a listing, newest first. */
+    fun bids(listing: UUID): List<Triple<UUID, BigDecimal, String>> = read { c ->
+        c.prepareStatement("SELECT bidder_uuid, amount, state FROM auc_bids WHERE listing_id = ? ORDER BY created_at DESC").use { s ->
+            s.setString(1, listing.toString())
+            s.executeQuery().use { rs ->
+                buildList { while (rs.next()) add(Triple(UUID.fromString(rs.getString(1)), rs.getBigDecimal(2), rs.getString(3))) }
+            }
+        }
+    }
+
     // ── Claims ───────────────────────────────────────────────────────────────
 
     fun insertClaims(claims: List<Claim>) { if (claims.isNotEmpty()) tx { c -> insertClaims(c, claims) } }

@@ -45,6 +45,7 @@ class Market(
     data class Listed(val listing: Listing, val fee: BigDecimal) : Outcome { override val key = "listed" }
     data class Bought(val listing: Listing, val price: BigDecimal) : Outcome { override val key = "bought" }
     data class Cancelled(val listing: Listing) : Outcome { override val key = "cancelled" }
+    data class BidPlaced(val listing: Listing, val amount: BigDecimal, val extended: Boolean) : Outcome { override val key = "bid_placed" }
 
     // ── Start-up ─────────────────────────────────────────────────────────────
 
@@ -222,6 +223,119 @@ class Market(
             total.divide(BigDecimal(qty), 4, RoundingMode.HALF_UP), l.sellerUuid, buyer, now))
     }
 
+    // ── Bidding ──────────────────────────────────────────────────────────────
+
+    /**
+     * Places a bid. The amount is taken from the bidder now and held by the
+     * house; the bidder it replaces gets theirs back through the claims box,
+     * in the same transaction that records the new leader.
+     */
+    fun bid(bidder: UUID, id: UUID, amount: BigDecimal, done: (Outcome) -> Unit) {
+        val c = config()
+        val l = cache.get(id) ?: return done(Problem("gone"))
+        if (l.type != ListingType.AUCTION) return done(Problem("not_an_auction"))
+        if (!c.auctions.enabled) return done(Problem("auctions_disabled"))
+        if (l.sellerUuid == bidder) return done(Problem("own_listing"))
+        val now = clock()
+        if (l.endsAt <= now) return done(Problem("gone"))
+        if (l.currentBidder == bidder) return done(Problem("already_leading"))
+        val start = l.startPrice ?: return done(Problem("gone"))
+        val min = Fees.minBid(start, l.currentBid, c.auctions.minIncrement)
+        val bid = Fees.money(amount)
+        if (bid < min) return done(Problem("bid_too_low", mapOf("min" to min)))
+        if (bid > c.sales.maxPrice) return done(Problem("price_out_of_bounds", mapOf("min" to min, "max" to c.sales.maxPrice)))
+        // A bid at or above the buy-now price is a purchase.
+        l.price?.takeIf { c.auctions.buyout && bid >= it }?.let { return buy(bidder, id, done) }
+        if (id in busy) return done(Problem("busy"))
+        hooks().preBid(bidder, l, bid)?.let { return done(Vetoed(it)) }
+        if (wallets.balance(bidder, l.currency) < bid) return done(Problem("insufficient_funds", mapOf("price" to bid)))
+
+        busy += id
+        val payment = Payment(UUID.randomUUID(), server, bidder, id, l.currency, bid, "bid", now)
+        threads.async {
+            val journaled = runCatching { store.insertPayment(payment) }
+                .onFailure { logger.log(Level.WARNING, "[Auctions] bid journal failed", it) }.isSuccess
+            threads.main {
+                if (!journaled) { busy -= id; return@main done(Problem("error")) }
+                if (!wallets.withdraw(bidder, l.currency, bid)) {
+                    busy -= id
+                    threads.async { runCatching { store.deletePayment(payment.id) } }
+                    return@main done(Problem("insufficient_funds", mapOf("price" to bid)))
+                }
+                threads.async { settleBid(l, bidder, bid, payment, done) }
+            }
+        }
+    }
+
+    private fun settleBid(l: Listing, bidder: UUID, bid: BigDecimal, payment: Payment, done: (Outcome) -> Unit) {
+        val now = clock()
+        val snipe = config().auctions.antiSnipe
+        val endsAt = if (l.endsAt - now < snipe.window.toMillis()) maxOf(l.endsAt, now + snipe.extend.toMillis()) else l.endsAt
+        val previous = l.currentBidder
+        val outbid = previous?.let { p -> l.currentBid?.let { Claim.money(server, p, l.currency, it, ClaimReason.OUTBID, l.id, now) } }
+        val placed = try {
+            store.placeBid(l.id, l.rowVersion, UUID.randomUUID(), bidder, l.currency, bid, endsAt, now, outbid, payment.id)
+        } catch (e: Exception) {
+            logger.log(Level.SEVERE, "[Auctions] bid on ${l.id} failed, payment left to reconcile", e)
+            threads.main { busy -= l.id; done(Problem("error")) }
+            return
+        }
+        if (placed) {
+            val updated = l.copy(currentBid = bid, currentBidder = bidder, bidCount = l.bidCount + 1,
+                endsAt = endsAt, rowVersion = l.rowVersion + 1)
+            threads.main {
+                busy -= l.id
+                cache.put(updated)
+                hooks().bidPlaced(updated, bidder, bid)
+                if (previous != null && outbid != null) hooks().outbid(updated, previous, outbid.amount!!)
+                done(BidPlaced(updated, bid, endsAt != l.endsAt))
+                if (outbid != null) delivery.deliver(listOf(outbid))
+            }
+        } else {
+            val refund = Claim.money(server, bidder, l.currency, bid, ClaimReason.REFUND, l.id, now)
+            val refunded = runCatching { store.refundPayment(payment.id, refund) }.getOrDefault(false)
+            val fresh = runCatching { store.listing(l.id) }.getOrNull()
+            threads.main {
+                busy -= l.id
+                if (fresh == null || fresh.status != ListingStatus.ACTIVE) cache.remove(l.id) else cache.put(fresh)
+                done(Problem(if (fresh?.status == ListingStatus.ACTIVE) "outbid_meanwhile" else "gone"))
+                if (refunded) delivery.deliver(listOf(refund))
+            }
+        }
+    }
+
+    /** An auction with a leading bid reached its end: the leader wins, the seller is paid. */
+    private fun endAuction(l: Listing) {
+        val winner = l.currentBidder ?: return
+        val price = l.currentBid ?: return
+        busy += l.id
+        threads.async {
+            val now = clock()
+            val tax = Fees.of(price, config().limits.saleTax)
+            val net = Fees.money(price - tax)
+            val toWinner = l.items.map { Claim.item(server, winner, it.blob, ClaimReason.WON, l.id, now) }
+            val toSeller = listOfNotNull(net.takeIf { it.signum() > 0 }?.let {
+                Claim.money(server, l.sellerUuid, l.currency, it, ClaimReason.SOLD, l.id, now)
+            })
+            val ok = runCatching {
+                store.close(l.id, l.rowVersion, ListingStatus.SOLD, now, toWinner + toSeller,
+                    saleRows(l, winner, price, now), winner = winner, bids = "captured")
+            }.onFailure { logger.log(Level.WARNING, "[Auctions] closing auction ${l.id} failed", it) }.getOrDefault(false)
+            val fresh = if (ok) null else runCatching { store.listing(l.id) }.getOrNull()
+            threads.main {
+                busy -= l.id
+                if (ok) {
+                    cache.remove(l.id)
+                    hooks().sold(l, winner, price, tax)
+                    hooks().won(l, winner, price)
+                    delivery.deliver(toWinner, items = config().claims.deliverDirectly)
+                    delivery.deliver(toSeller)
+                } else if (fresh == null || fresh.status != ListingStatus.ACTIVE) cache.remove(l.id)
+                else cache.put(fresh)
+            }
+        }
+    }
+
     // ── Cancelling and expiring ──────────────────────────────────────────────
 
     fun cancel(actor: UUID, id: UUID, admin: Boolean, done: (Outcome) -> Unit) {
@@ -254,12 +368,12 @@ class Market(
                 l.currentBid?.let { Claim.money(server, b, l.currency, it, ClaimReason.REFUND, l.id, now) }
             })
 
-    /** Ends what is due (main thread, every few seconds). Auctions with bids are left to [auctionEnd]. */
-    fun expireDue(auctionEnd: (Listing) -> Unit = {}) {
+    /** Ends what is due (main thread, every few seconds): expired listings back to the seller, won auctions settled. */
+    fun expireDue() {
         val now = clock()
         for (l in cache.due(now)) {
             if (l.id in busy) continue
-            if (l.type == ListingType.AUCTION && l.currentBidder != null) { auctionEnd(l); continue }
+            if (l.type == ListingType.AUCTION && l.currentBidder != null) { endAuction(l); continue }
             busy += l.id
             threads.async {
                 val claims = returnClaims(l, ClaimReason.EXPIRED, now)
@@ -278,9 +392,4 @@ class Market(
             }
         }
     }
-
-    // ── Shared with the auction flow ─────────────────────────────────────────
-
-    internal fun lock(id: UUID): Boolean = busy.add(id)
-    internal fun unlock(id: UUID) { busy -= id }
 }
