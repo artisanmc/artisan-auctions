@@ -1,6 +1,5 @@
 auctions:
   messages:
-    usage: "<gray>/{label} <white>[sell <price> | auction <opening bid> [duration] [buy-now] | search <text> | mine | claim]"
     bad_command: "<red>This button is misconfigured."
     no_permission: "<red>You are not allowed to do that."
     error: "<red>Something went wrong; nothing was taken. Try again."

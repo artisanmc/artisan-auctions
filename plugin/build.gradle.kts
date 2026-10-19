@@ -16,6 +16,7 @@ kotlin {
 dependencies {
     compileOnly(rootProject.extra["paperApi"] as String)
     compileOnly(rootProject.extra["artisanApi"] as String)
+    compileOnly(rootProject.extra["vaultApi"] as String) { isTransitive = false }
     // Not shaded: Artisan (a hard `depend`) ships kotlin-stdlib 2.0.21 under its
     // own names and Paper's legacy classloader shares it. A second, relocated copy
     // would break any Kotlin default argument of the core API (the synthetic

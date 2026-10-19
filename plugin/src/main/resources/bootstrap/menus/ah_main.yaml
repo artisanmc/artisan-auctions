@@ -3,7 +3,6 @@ title:
   - kind: plain
     value: { en: "<dark_gray>Auction House", fr: "<dark_gray>Hôtel des ventes" }
 size: 54
-refresh_interval: 5
 inputs:
   - { name: tab, type: string, default: "all" }
   - { name: sort, type: string, default: "newest" }

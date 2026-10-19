@@ -3,11 +3,11 @@ package net.artisanmc.auctions.paper
 import net.artisanmc.auctions.api.ListingType
 import net.artisanmc.auctions.sources.ListingRows
 import net.artisanmc.modules.api.ArtisanAPI
-import net.artisanmc.modules.api.CommandDeclaration
-import net.artisanmc.modules.api.DataSourceDeclaration
-import net.artisanmc.modules.api.DataSourceField
-import net.artisanmc.modules.api.FieldKind
-import net.artisanmc.modules.api.Stability
+import net.artisanmc.modules.api.command.CommandDeclaration
+import net.artisanmc.modules.api.datasource.DataFetcher
+import net.artisanmc.modules.api.datasource.DataSourceDeclaration
+import net.artisanmc.modules.api.datasource.DataSourceField
+import net.artisanmc.modules.api.datasource.FieldKind
 import org.bukkit.entity.Player
 import java.util.UUID
 
@@ -98,7 +98,7 @@ object ModuleBindings {
         )))
 
         // One row per viewer: counters for buttons ("My listings (3)", "Claims (2)").
-        api.dataSources.register(DataSourceDeclaration(SUMMARY, { player, _ ->
+        api.dataSources.register(DataSourceDeclaration(SUMMARY, DataFetcher { player, _ ->
             val viewer = player?.uniqueId
             listOf(mapOf(
                 "id" to "summary",
@@ -113,7 +113,7 @@ object ModuleBindings {
             DataSourceField("mine", FieldKind.INTEGER, "Active listings of the viewer"),
             DataSourceField("limit", FieldKind.INTEGER, "How many the viewer may have"),
             DataSourceField("claims", FieldKind.INTEGER, "Items and amounts waiting in the viewer's box"),
-        ), stability = Stability.DYNAMIC))
+        )))
 
         // The median of the held item (or of `item`, a material name), for any menu.
         api.dataSources.register(DataSourceDeclaration(PRICE, { player, params ->

@@ -5,7 +5,9 @@ import net.artisanmc.auctions.config.AuctionsConfig
 import net.artisanmc.auctions.market.Listing
 import net.artisanmc.auctions.market.Notifier
 import net.artisanmc.auctions.sources.ListingRows
-import net.artisanmc.modules.api.ModuleActionsApi
+import net.artisanmc.modules.api.action.ModuleActionsApi
+import net.artisanmc.modules.api.menu.MenuApi
+import net.artisanmc.modules.api.menu.MenuRef
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
@@ -22,6 +24,7 @@ import java.util.logging.Logger
  */
 class ProjectNotifier(
     private val actions: ModuleActionsApi,
+    private val menus: MenuApi,
     private val config: () -> AuctionsConfig,
     private val logger: Logger,
 ) : Notifier {
@@ -38,7 +41,11 @@ class ProjectNotifier(
         if (message is Component) player.sendMessage(message) else tell(player, "vetoed")
     }
 
-    fun openMenu(player: Player, menu: String, args: Map<String, Any> = emptyMap()) = run(player, "open_menu $menu", args)
+    fun openMenu(player: Player, menu: String, args: Map<String, Any> = emptyMap()) {
+        if (!menus.open(player, MenuRef(AuctionsModule.PROJECT_ID, menu), args)) {
+            logger.warning("[Auctions] menu '${AuctionsModule.PROJECT_ID}:$menu' not found: was it deleted from the Project?")
+        }
+    }
 
     fun openDialog(player: Player, dialog: String, args: Map<String, Any> = emptyMap()) = run(player, "open_dialog $dialog", args)
 

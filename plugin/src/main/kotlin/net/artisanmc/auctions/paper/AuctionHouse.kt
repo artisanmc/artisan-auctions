@@ -1,5 +1,6 @@
 package net.artisanmc.auctions.paper
 
+import net.artisanmc.auctions.AuctionsModule
 import net.artisanmc.auctions.api.ListingType
 import net.artisanmc.auctions.config.AuctionsConfig
 import net.artisanmc.auctions.config.formatDuration
@@ -36,17 +37,19 @@ class AuctionHouse(
     private val api: ArtisanAPI,
     val server: String,
     val store: AuctionStore,
+    val currencies: Currencies,
     val config: () -> AuctionsConfig,
 ) {
     private val logger = plugin.logger
     val threads = PaperThreads(plugin)
-    val wallets = EconomyWallets(api.economy)
+    val wallets = EconomyWallets(currencies)
     val cache = ListingCache()
-    val notifier = ProjectNotifier(api.actions, config, logger)
+    val menus = MenuWatch(api.menus, AuctionsModule.PROJECT_ID)
+    val notifier = ProjectNotifier(api.actions, api.menus, config, logger)
     val claims = ClaimBox(server, store, threads, config, logger) { owner ->
-        Bukkit.getPlayer(owner)?.let { p -> if (api.menus.openMenuId(p) == MENU_CLAIMS) api.menus.refresh(p) }
+        Bukkit.getPlayer(owner)?.let { p -> menus.repaint(p, listOf(MENU_CLAIMS)) }
     }
-    val medians = MedianCache(store, threads, config, logger, loaded = ::scheduleRefresh)
+    val medians = MedianCache(store, threads, config, logger, loaded = { scheduleRefresh() })
     val hooks = EventHooks(notifier,
         median = { r -> r.items.map { it.priceKey }.distinct().singleOrNull()?.let { medians.get(it, r.currency)?.price } },
         onSold = { l -> l.sharedPriceKey?.let { medians.invalidate(it, l.currency) } },
@@ -63,26 +66,40 @@ class AuctionHouse(
     private val confirmations = HashMap<UUID, () -> Unit>()
 
     fun start() {
+        menus.start()
         market.start { Bukkit.getOnlinePlayers().forEach { join(it) } }
     }
 
     fun stop() {
         pending.clear()
         confirmations.clear()
+        menus.stop()
         threads.shutdown()
     }
 
     // ── Menus ────────────────────────────────────────────────────────────────
 
     private var refreshQueued = false
+    /** Listings changed since the last repaint; null: any (medians loaded, import). */
+    private var changed: MutableSet<String>? = HashSet()
 
-    /** Repaints the house menus once per tick at most, however many listings changed. */
-    fun scheduleRefresh() {
+    /**
+     * Repaints, once per tick at most, the lot menus showing a listing that changed. The
+     * grids (`ah_main`, `ah_mine`) are paged and a repaint would send their viewers back
+     * to the first page: they show the change on their next render, and a click on a
+     * listing that is gone is refused.
+     */
+    fun scheduleRefresh(listing: UUID? = null) {
+        if (listing == null) changed = null else changed?.add(listing.toString())
         if (refreshQueued || !plugin.isEnabled) return
         refreshQueued = true
         Bukkit.getScheduler().runTask(plugin, Runnable {
             refreshQueued = false
-            LISTING_MENUS.forEach(api.menus::refreshAll)
+            val ids = changed
+            changed = HashSet()
+            Bukkit.getOnlinePlayers().forEach { p ->
+                menus.repaint(p, listOf(MENU_LOT)) { args -> ids == null || args["id"]?.toString() in ids }
+            }
         })
     }
 
@@ -105,6 +122,7 @@ class AuctionHouse(
     fun quit(p: Player) {
         pending.remove(p.uniqueId)
         confirmations.remove(p.uniqueId)
+        menus.forget(p.uniqueId)
         claims.forget(p.uniqueId)
     }
 
@@ -410,7 +428,6 @@ class AuctionHouse(
         const val MENU_MINE = "ah_mine"
         const val MENU_CLAIMS = "ah_claims"
         const val MENU_LOT = "ah_lot"
-        val LISTING_MENUS = listOf(MENU_MAIN, MENU_MINE, MENU_LOT)
         const val DIALOG_SELL_TYPE = "ah_sell_type"
         const val DIALOG_SELL_FIXED = "ah_sell_fixed"
         const val DIALOG_SELL_AUCTION = "ah_sell_auction"

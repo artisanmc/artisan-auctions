@@ -3,7 +3,6 @@ title:
   - kind: plain
     value: { en: "<dark_gray>My listings", fr: "<dark_gray>Mes annonces" }
 size: 54
-refresh_interval: 5
 inputs:
   - name: summary
     type: list

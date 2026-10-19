@@ -2,10 +2,11 @@ package net.artisanmc.auctions.sources
 
 import net.artisanmc.auctions.config.AuctionsConfig
 import net.artisanmc.auctions.config.formatDuration
-import net.artisanmc.modules.api.DataSourceDeclaration
-import net.artisanmc.modules.api.DataSourceField
-import net.artisanmc.modules.api.FieldKind
-import net.artisanmc.modules.api.Stability
+import net.artisanmc.modules.api.datasource.DataFetcher
+import net.artisanmc.modules.api.datasource.DataSourceDeclaration
+import net.artisanmc.modules.api.datasource.DataSourceField
+import net.artisanmc.modules.api.datasource.FieldKind
+import net.artisanmc.modules.api.datasource.Stability
 
 /**
  * `auctions:settings`: one row describing what the house allows right now.
@@ -33,7 +34,7 @@ object SettingsSource {
 
     fun declaration(config: () -> AuctionsConfig): DataSourceDeclaration = DataSourceDeclaration(
         REF,
-        { _, _ -> listOf(row(config())) },
+        DataFetcher { _, _ -> listOf(row(config())) },
         listOf(
             DataSourceField("id", FieldKind.STRING, "Always `settings`"),
             DataSourceField("sales_enabled", FieldKind.BOOLEAN, "Fixed-price sales can be created"),
@@ -49,7 +50,6 @@ object SettingsSource {
             DataSourceField("sale_duration", FieldKind.STRING, "Lifetime of a fixed-price listing"),
             DataSourceField("max_active_listings", FieldKind.INTEGER, "Listings per player, before permissions"),
         ),
-        null,
         Stability.STATIC,
         "id",
     )

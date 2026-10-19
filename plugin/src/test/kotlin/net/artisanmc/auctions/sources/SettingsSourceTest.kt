@@ -1,7 +1,7 @@
 package net.artisanmc.auctions.sources
 
 import net.artisanmc.auctions.config.AuctionsConfig
-import net.artisanmc.modules.api.DataSourceRegistry
+import net.artisanmc.modules.api.datasource.DataSourceRegistry
 import kotlin.test.*
 
 class SettingsSourceTest {

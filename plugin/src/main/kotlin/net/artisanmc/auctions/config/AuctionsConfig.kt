@@ -50,7 +50,7 @@ data class AuctionsConfig(
 
     data class Fee(val percent: BigDecimal = BigDecimal.ZERO, val flat: BigDecimal = BigDecimal.ZERO)
 
-    /** Ids of the core currency registry (`api.economy`). */
+    /** `vault`, or ids of `AuctionCurrency` services other plugins register. */
     data class Currencies(
         val allowed: List<String> = listOf("vault"),
         val default: String = "vault",
