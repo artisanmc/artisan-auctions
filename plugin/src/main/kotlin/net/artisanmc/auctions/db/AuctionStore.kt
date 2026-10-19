@@ -1,0 +1,346 @@
+package net.artisanmc.auctions.db
+
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import net.artisanmc.auctions.api.ListingType
+import net.artisanmc.auctions.market.Claim
+import net.artisanmc.auctions.market.ClaimKind
+import net.artisanmc.auctions.market.ClaimReason
+import net.artisanmc.auctions.market.Listing
+import net.artisanmc.auctions.market.ListingItem
+import net.artisanmc.auctions.market.ListingStatus
+import net.artisanmc.auctions.market.Payment
+import net.artisanmc.auctions.market.PaymentState
+import net.artisanmc.auctions.market.Sale
+import java.math.BigDecimal
+import java.sql.Connection
+import java.sql.PreparedStatement
+import java.sql.ResultSet
+import java.sql.Types
+import java.util.UUID
+import javax.sql.DataSource
+
+/**
+ * Every SQL statement of the add-on. Blocking: called from the database
+ * executor, never from the main thread. Each state change of a listing is a
+ * compare-and-swap on `status = 'active' AND row_version = ?`, so a listing is
+ * sold, expired or cancelled exactly once, even with two servers on one database.
+ */
+class AuctionStore(private val ds: DataSource) {
+
+    private val gson = Gson()
+    private val mapType = object : TypeToken<Map<String, Any?>>() {}.type
+
+    // ── Listings ─────────────────────────────────────────────────────────────
+
+    fun insertListing(l: Listing) = tx { c ->
+        c.prepareStatement(
+            "INSERT INTO auc_listings (id, server, listing_type, status, seller_uuid, seller_name, currency, price, " +
+                "start_price, current_bid, current_bidder, bid_count, created_at, ends_at, row_version) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        ).use { s ->
+            s.setString(1, l.id.toString()); s.setString(2, l.server); s.setString(3, l.type.id())
+            s.setString(4, l.status.id); s.setString(5, l.sellerUuid.toString()); s.setString(6, l.sellerName)
+            s.setString(7, l.currency); s.setAmount(8, l.price); s.setAmount(9, l.startPrice)
+            s.setAmount(10, l.currentBid); s.setString(11, l.currentBidder?.toString()); s.setInt(12, l.bidCount)
+            s.setLong(13, l.createdAt); s.setLong(14, l.endsAt); s.setInt(15, l.rowVersion)
+            s.executeUpdate()
+        }
+        c.prepareStatement(
+            "INSERT INTO auc_listing_items (listing_id, slot_index, item_blob, item_display, price_key, quantity) VALUES (?, ?, ?, ?, ?, ?)",
+        ).use { s ->
+            for (item in l.items) {
+                s.setString(1, l.id.toString()); s.setInt(2, item.slot); s.setString(3, item.blob)
+                s.setString(4, gson.toJson(item.display)); s.setString(5, item.priceKey); s.setInt(6, item.quantity)
+                s.addBatch()
+            }
+            s.executeBatch()
+        }
+    }
+
+    fun activeListings(server: String): List<Listing> = read { c ->
+        val rows = c.prepareStatement("SELECT * FROM auc_listings WHERE server = ? AND status = 'active'").use { s ->
+            s.setString(1, server)
+            s.executeQuery().use { rs -> buildList { while (rs.next()) add(listingRow(rs)) } }
+        }
+        attachItems(c, rows)
+    }
+
+    fun listing(id: UUID): Listing? = read { c ->
+        val row = c.prepareStatement("SELECT * FROM auc_listings WHERE id = ?").use { s ->
+            s.setString(1, id.toString())
+            s.executeQuery().use { rs -> if (rs.next()) listingRow(rs) else null }
+        } ?: return@read null
+        attachItems(c, listOf(row)).single()
+    }
+
+    /**
+     * Moves an active listing to [status] if nobody changed it since [expectedVersion],
+     * and in the same transaction writes what that outcome owes: [claims], [sales],
+     * and the settlement of [payment]. False (and nothing written) when the listing
+     * was not active at that version anymore.
+     */
+    fun close(
+        id: UUID, expectedVersion: Int, status: ListingStatus, now: Long,
+        claims: List<Claim> = emptyList(), sales: List<Sale> = emptyList(), payment: UUID? = null,
+        winner: UUID? = null,
+        /** New state of the listing's `held` bids (`refunded`, `captured`), if any. */
+        bids: String? = null,
+    ): Boolean = tx { c ->
+        val changed = c.prepareStatement(
+            "UPDATE auc_listings SET status = ?, closed_at = ?, row_version = row_version + 1" +
+                (if (winner != null) ", current_bidder = ?" else "") +
+                " WHERE id = ? AND status = 'active' AND row_version = ?",
+        ).use { s ->
+            var i = 0
+            s.setString(++i, status.id); s.setLong(++i, now)
+            if (winner != null) s.setString(++i, winner.toString())
+            s.setString(++i, id.toString()); s.setInt(++i, expectedVersion)
+            s.executeUpdate()
+        }
+        if (changed != 1) return@tx false
+        insertClaims(c, claims)
+        insertSales(c, sales)
+        if (payment != null) setPaymentState(c, payment, PaymentState.SETTLED)
+        if (bids != null) {
+            c.prepareStatement("UPDATE auc_bids SET state = ? WHERE listing_id = ? AND state = 'held'").use { s ->
+                s.setString(1, bids); s.setString(2, id.toString()); s.executeUpdate()
+            }
+        }
+        true
+    }
+
+    // ── Claims ───────────────────────────────────────────────────────────────
+
+    fun insertClaims(claims: List<Claim>) { if (claims.isNotEmpty()) tx { c -> insertClaims(c, claims) } }
+
+    fun unclaimed(server: String, owner: UUID): List<Claim> = read { c ->
+        c.prepareStatement(
+            "SELECT * FROM auc_claims WHERE server = ? AND owner_uuid = ? AND claimed_at IS NULL ORDER BY created_at",
+        ).use { s ->
+            s.setString(1, server); s.setString(2, owner.toString())
+            s.executeQuery().use { rs -> buildList { while (rs.next()) add(claimRow(rs)) } }
+        }
+    }
+
+    fun claim(id: UUID): Claim? = read { c ->
+        c.prepareStatement("SELECT * FROM auc_claims WHERE id = ? AND claimed_at IS NULL").use { s ->
+            s.setString(1, id.toString())
+            s.executeQuery().use { rs -> if (rs.next()) claimRow(rs) else null }
+        }
+    }
+
+    /** True for the one caller that takes the claim. */
+    fun markClaimed(id: UUID, now: Long): Boolean = tx { c ->
+        c.prepareStatement("UPDATE auc_claims SET claimed_at = ? WHERE id = ? AND claimed_at IS NULL").use { s ->
+            s.setLong(1, now); s.setString(2, id.toString()); s.executeUpdate() == 1
+        }
+    }
+
+    /** Puts back a claim whose delivery failed (full inventory, refused deposit). */
+    fun reopenClaim(id: UUID) = tx { c ->
+        c.prepareStatement("UPDATE auc_claims SET claimed_at = NULL WHERE id = ?").use { s ->
+            s.setString(1, id.toString()); s.executeUpdate()
+        }
+    }
+
+    /** Unclaimed claims created before [before]; [delete] removes them. */
+    fun staleClaims(server: String, before: Long): List<Claim> = read { c ->
+        c.prepareStatement("SELECT * FROM auc_claims WHERE server = ? AND claimed_at IS NULL AND created_at < ?").use { s ->
+            s.setString(1, server); s.setLong(2, before)
+            s.executeQuery().use { rs -> buildList { while (rs.next()) add(claimRow(rs)) } }
+        }
+    }
+
+    fun deleteClaim(id: UUID) = tx { c ->
+        c.prepareStatement("DELETE FROM auc_claims WHERE id = ? AND claimed_at IS NULL").use { s ->
+            s.setString(1, id.toString()); s.executeUpdate()
+        }
+    }
+
+    // ── Payments journal ─────────────────────────────────────────────────────
+
+    fun insertPayment(p: Payment) = tx { c ->
+        c.prepareStatement(
+            "INSERT INTO auc_payments (id, server, player_uuid, listing_id, currency, amount, purpose, state, created_at) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        ).use { s ->
+            s.setString(1, p.id.toString()); s.setString(2, p.server); s.setString(3, p.player.toString())
+            s.setString(4, p.listingId.toString()); s.setString(5, p.currency); s.setAmount(6, p.amount)
+            s.setString(7, p.purpose); s.setString(8, PaymentState.PENDING.id); s.setLong(9, p.createdAt)
+            s.executeUpdate()
+        }
+    }
+
+    /** The charge never happened (refused by the economy): forget the intent. */
+    fun deletePayment(id: UUID) = tx { c ->
+        c.prepareStatement("DELETE FROM auc_payments WHERE id = ? AND state = 'pending'").use { s ->
+            s.setString(1, id.toString()); s.executeUpdate()
+        }
+    }
+
+    /** Settles a pending payment as a refund: the money goes to the claims box. False when no longer pending. */
+    fun refundPayment(id: UUID, refund: Claim): Boolean = tx { c ->
+        if (!setPaymentState(c, id, PaymentState.REFUNDED)) return@tx false
+        insertClaims(c, listOf(refund))
+        true
+    }
+
+    fun pendingPayments(server: String): List<Payment> = read { c ->
+        c.prepareStatement("SELECT * FROM auc_payments WHERE server = ? AND state = 'pending'").use { s ->
+            s.setString(1, server)
+            s.executeQuery().use { rs ->
+                buildList {
+                    while (rs.next()) add(Payment(
+                        UUID.fromString(rs.getString("id")), rs.getString("server"), UUID.fromString(rs.getString("player_uuid")),
+                        UUID.fromString(rs.getString("listing_id")), rs.getString("currency"), rs.getBigDecimal("amount"),
+                        rs.getString("purpose"), rs.getLong("created_at"),
+                    ))
+                }
+            }
+        }
+    }
+
+    // ── Sales history ────────────────────────────────────────────────────────
+
+    fun insertSales(sales: List<Sale>) { if (sales.isNotEmpty()) tx { c -> insertSales(c, sales) } }
+
+    /** Seller and unit price of the latest sales of a key, newest first. */
+    fun recentSales(priceKey: String, currency: String, since: Long, limit: Int, types: Set<String>): List<Pair<UUID, BigDecimal>> =
+        read { c ->
+            c.prepareStatement(
+                "SELECT seller_uuid, unit_price, listing_type FROM auc_sales WHERE price_key = ? AND currency = ? AND sold_at >= ? " +
+                    "ORDER BY sold_at DESC",
+            ).use { s ->
+                s.setString(1, priceKey); s.setString(2, currency); s.setLong(3, since)
+                s.maxRows = limit * 2
+                s.executeQuery().use { rs ->
+                    buildList {
+                        while (rs.next() && size < limit) {
+                            if (rs.getString("listing_type") in types) {
+                                add(UUID.fromString(rs.getString("seller_uuid")) to rs.getBigDecimal("unit_price"))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    // ── Rows ─────────────────────────────────────────────────────────────────
+
+    private fun listingRow(rs: ResultSet) = Listing(
+        id = UUID.fromString(rs.getString("id")),
+        server = rs.getString("server"),
+        type = ListingType.valueOf(rs.getString("listing_type").uppercase()),
+        status = ListingStatus.of(rs.getString("status")),
+        sellerUuid = UUID.fromString(rs.getString("seller_uuid")),
+        sellerName = rs.getString("seller_name"),
+        currency = rs.getString("currency"),
+        price = rs.getBigDecimal("price"),
+        startPrice = rs.getBigDecimal("start_price"),
+        currentBid = rs.getBigDecimal("current_bid"),
+        currentBidder = rs.getString("current_bidder")?.let(UUID::fromString),
+        bidCount = rs.getInt("bid_count"),
+        createdAt = rs.getLong("created_at"),
+        endsAt = rs.getLong("ends_at"),
+        rowVersion = rs.getInt("row_version"),
+        items = emptyList(),
+    )
+
+    private fun attachItems(c: Connection, listings: List<Listing>): List<Listing> {
+        if (listings.isEmpty()) return listings
+        val byId = HashMap<String, MutableList<ListingItem>>()
+        // Chunked IN lists: H2 and MySQL both cap the statement size.
+        for (chunk in listings.chunked(500)) {
+            val marks = chunk.joinToString(",") { "?" }
+            c.prepareStatement("SELECT * FROM auc_listing_items WHERE listing_id IN ($marks)").use { s ->
+                chunk.forEachIndexed { i, l -> s.setString(i + 1, l.id.toString()) }
+                s.executeQuery().use { rs ->
+                    while (rs.next()) {
+                        byId.getOrPut(rs.getString("listing_id")) { mutableListOf() } += ListingItem(
+                            slot = rs.getInt("slot_index"),
+                            blob = rs.getString("item_blob"),
+                            display = gson.fromJson(rs.getString("item_display"), mapType) ?: emptyMap(),
+                            priceKey = rs.getString("price_key"),
+                            quantity = rs.getInt("quantity"),
+                        )
+                    }
+                }
+            }
+        }
+        return listings.map { l -> l.copy(items = byId[l.id.toString()].orEmpty().sortedBy { it.slot }) }
+    }
+
+    private fun claimRow(rs: ResultSet) = Claim(
+        id = UUID.fromString(rs.getString("id")),
+        server = rs.getString("server"),
+        owner = UUID.fromString(rs.getString("owner_uuid")),
+        kind = ClaimKind.of(rs.getString("claim_kind")),
+        itemBlob = rs.getString("item_blob"),
+        currency = rs.getString("currency"),
+        amount = rs.getBigDecimal("amount"),
+        reason = ClaimReason.of(rs.getString("reason")),
+        listingId = rs.getString("listing_id")?.let(UUID::fromString),
+        createdAt = rs.getLong("created_at"),
+    )
+
+    private fun insertClaims(c: Connection, claims: List<Claim>) {
+        if (claims.isEmpty()) return
+        c.prepareStatement(
+            "INSERT INTO auc_claims (id, server, owner_uuid, claim_kind, item_blob, currency, amount, reason, listing_id, created_at) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        ).use { s ->
+            for (cl in claims) {
+                s.setString(1, cl.id.toString()); s.setString(2, cl.server); s.setString(3, cl.owner.toString())
+                s.setString(4, cl.kind.id); s.setString(5, cl.itemBlob); s.setString(6, cl.currency)
+                s.setAmount(7, cl.amount); s.setString(8, cl.reason.id); s.setString(9, cl.listingId?.toString())
+                s.setLong(10, cl.createdAt)
+                s.addBatch()
+            }
+            s.executeBatch()
+        }
+    }
+
+    private fun insertSales(c: Connection, sales: List<Sale>) {
+        if (sales.isEmpty()) return
+        c.prepareStatement(
+            "INSERT INTO auc_sales (id, listing_id, server, listing_type, price_key, currency, quantity, total, unit_price, " +
+                "seller_uuid, buyer_uuid, sold_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        ).use { s ->
+            for (sale in sales) {
+                s.setString(1, sale.id.toString()); s.setString(2, sale.listingId.toString()); s.setString(3, sale.server)
+                s.setString(4, sale.type.id()); s.setString(5, sale.priceKey); s.setString(6, sale.currency)
+                s.setInt(7, sale.quantity); s.setAmount(8, sale.total); s.setAmount(9, sale.unitPrice)
+                s.setString(10, sale.seller.toString()); s.setString(11, sale.buyer?.toString()); s.setLong(12, sale.soldAt)
+                s.addBatch()
+            }
+            s.executeBatch()
+        }
+    }
+
+    private fun setPaymentState(c: Connection, id: UUID, state: PaymentState): Boolean =
+        c.prepareStatement("UPDATE auc_payments SET state = ? WHERE id = ? AND state = 'pending'").use { s ->
+            s.setString(1, state.id); s.setString(2, id.toString()); s.executeUpdate() == 1
+        }
+
+    private fun PreparedStatement.setAmount(i: Int, v: BigDecimal?) {
+        if (v == null) setNull(i, Types.DECIMAL) else setBigDecimal(i, v)
+    }
+
+    // ── Transactions ─────────────────────────────────────────────────────────
+
+    internal fun <T> tx(block: (Connection) -> T): T = ds.connection.use { c ->
+        val auto = c.autoCommit
+        c.autoCommit = false
+        try {
+            block(c).also { c.commit() }
+        } catch (e: Throwable) {
+            runCatching { c.rollback() }
+            throw e
+        } finally {
+            runCatching { c.autoCommit = auto }
+        }
+    }
+
+    internal fun <T> read(block: (Connection) -> T): T = ds.connection.use(block)
+}

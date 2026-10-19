@@ -15,16 +15,17 @@ class MigrationsTest {
     }
 
     @Test fun `creates every table once and records the version`() {
-        assertEquals(1, Migrations(ds, logger).run())
+        val latest = Schema.migrations.maxOf { it.version }
+        assertEquals(latest, Migrations(ds, logger).run())
         assertEquals(setOf("auc_listings", "auc_listing_items", "auc_bids", "auc_sales", "auc_claims",
-            "auc_import_map", "auc_schema_history"), tables())
-        assertEquals(1, Migrations(ds, logger).run(), "a second start changes nothing")
+            "auc_import_map", "auc_payments", "auc_schema_history"), tables())
+        assertEquals(latest, Migrations(ds, logger).run(), "a second start changes nothing")
     }
 
     @Test fun `a migration interrupted after its first statements is replayed`() {
         val first = Schema.migrations.first()
         ds.connection.use { c -> first.statements.take(3).forEach { sql -> c.createStatement().use { it.execute(sql.trimIndent()) } } }
-        assertEquals(1, Migrations(ds, logger).run())
+        assertEquals(Schema.migrations.maxOf { it.version }, Migrations(ds, logger).run())
         assertTrue("auc_claims" in tables())
     }
 
@@ -46,7 +47,7 @@ class MigrationsTest {
                 s.executeQuery("SELECT total, unit_price FROM auc_sales").use { rs ->
                     assertTrue(rs.next())
                     assertEquals("10.01", rs.getBigDecimal(1).toPlainString())
-                    assertEquals("3.34", rs.getBigDecimal(2).toPlainString())
+                    assertEquals(0, java.math.BigDecimal("3.34").compareTo(rs.getBigDecimal(2)))
                 }
             }
         }

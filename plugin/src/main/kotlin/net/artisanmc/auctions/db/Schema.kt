@@ -76,7 +76,7 @@ object Schema {
                 currency VARCHAR(64) NOT NULL,
                 quantity INT NOT NULL,
                 total DECIMAL(19,2) NOT NULL,
-                unit_price DECIMAL(19,2) NOT NULL,
+                unit_price DECIMAL(19,4) NOT NULL,
                 seller_uuid VARCHAR(36) NOT NULL,
                 buyer_uuid VARCHAR(36),
                 sold_at BIGINT NOT NULL
@@ -109,6 +109,25 @@ object Schema {
                 PRIMARY KEY (source, source_id)
             )
             """,
+        )),
+        // Intent written before a buyer is charged, settled in the same
+        // transaction as the sale. A row left `pending` after a crash means the
+        // sale never happened: it is refunded through the claims box at start-up.
+        Migration(2, "payments journal", listOf(
+            """
+            CREATE TABLE IF NOT EXISTS auc_payments (
+                id VARCHAR(36) NOT NULL PRIMARY KEY,
+                server VARCHAR(64) NOT NULL,
+                player_uuid VARCHAR(36) NOT NULL,
+                listing_id VARCHAR(36) NOT NULL,
+                currency VARCHAR(64) NOT NULL,
+                amount DECIMAL(19,2) NOT NULL,
+                purpose VARCHAR(16) NOT NULL,
+                state VARCHAR(16) NOT NULL,
+                created_at BIGINT NOT NULL
+            )
+            """,
+            "CREATE INDEX auc_payments_state ON auc_payments (server, state)",
         )),
     )
 }
