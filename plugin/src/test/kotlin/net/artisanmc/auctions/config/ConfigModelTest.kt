@@ -12,15 +12,28 @@ class ConfigModelTest {
         if (type["kind"] == "object") modelKeys(type["fields"] as List<*>, "$name.") else listOf(name)
     }.toSet()
 
-    private fun fileKeys(map: Map<*, *>, prefix: String = ""): Set<String> = map.flatMap { (k, v) ->
+    /** Keys whose value is a free map (kind `map`): one form field, not a section. */
+    private fun mapKeys(fields: List<*>, prefix: String = ""): Set<String> = fields.flatMap { f ->
+        f as Map<*, *>
+        val name = prefix + f["name"]
+        val type = f["type"] as Map<*, *>
+        when (type["kind"]) {
+            "object" -> mapKeys(type["fields"] as List<*>, "$name.")
+            "map" -> listOf(name)
+            else -> emptyList()
+        }
+    }.toSet()
+
+    private fun fileKeys(map: Map<*, *>, leaves: Set<String>, prefix: String = ""): Set<String> = map.flatMap { (k, v) ->
         val name = "$prefix$k"
-        if (v is Map<*, *>) fileKeys(v, "$name.") else listOf(name)
+        if (v is Map<*, *> && name !in leaves) fileKeys(v, leaves, "$name.") else listOf(name)
     }.toSet()
 
     @Test fun `every key of the bootstrap config is in the model and back`() {
         val file = Yaml().load<Map<*, *>>(javaClass.getResource("/bootstrap/data/config.yaml")!!.readText())
         val doc = ConfigModel.document()
-        assertEquals(fileKeys(file), modelKeys(doc["fields"] as List<*>))
+        val fields = doc["fields"] as List<*>
+        assertEquals(fileKeys(file, mapKeys(fields)), modelKeys(fields))
     }
 
     @Test fun `the declaration carries what model v1 requires`() {
@@ -41,5 +54,6 @@ class ConfigModelTest {
         assertEquals(AuctionsConfig().sales, result.config.sales)
         assertEquals(AuctionsConfig().auctions, result.config.auctions)
         assertEquals(AuctionsConfig().limits, result.config.limits)
+        assertEquals(AuctionsConfig().currencies, result.config.currencies)
     }
 }

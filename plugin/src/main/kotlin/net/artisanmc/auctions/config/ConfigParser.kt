@@ -68,7 +68,7 @@ object ConfigParser {
             val default = s.string("default", allowed.firstOrNull() ?: d.currencies.default)
             if (allowed.isEmpty()) s.error("allowed", "lists no currency")
             else if (default !in allowed) s.error("default", "'$default' is not in currencies.allowed")
-            AuctionsConfig.Currencies(allowed, default)
+            AuctionsConfig.Currencies(allowed, default, s.stringMap("display", d.currencies.display))
         }
 
         val items = r.section("items").let { s ->
@@ -161,6 +161,12 @@ object ConfigParser {
             null -> def
             is List<*> -> v.mapNotNull { it?.toString()?.trim()?.takeIf(String::isNotEmpty) }
             else -> def.also { error(k, "must be a list") }
+        }
+
+        fun stringMap(k: String, def: Map<String, String>): Map<String, String> = when (val v = map[k]) {
+            null -> def
+            is Map<*, *> -> v.entries.associate { (key, value) -> key.toString() to value.toString() }
+            else -> def.also { error(k, "must be a section") }
         }
 
         fun duration(k: String, def: Duration): Duration {

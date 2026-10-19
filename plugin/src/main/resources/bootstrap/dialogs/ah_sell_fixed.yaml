@@ -1,0 +1,18 @@
+schema: dialog/v1
+title: { en: "Sell {item_name}", fr: "Vendre {item_name}" }
+can_close_with_escape: true
+body:
+  - { type: text, text: { en: "<white>{quantity}× {item_name}", fr: "<white>{quantity}× {item_name}" } }
+  - { type: text, text: { en: "<gray>Listed for {sale_duration}. Listing fee: {fee}. Sale tax: {tax}.", fr: "<gray>En vente pendant {sale_duration}. Frais de mise en vente : {fee}. Taxe sur la vente : {tax}." } }
+  - { type: text, text: { en: "<gray>Price in {currency}, for the whole stack.", fr: "<gray>Prix en {currency}, pour toute la pile." } }
+inputs:
+  - { id: price, type: text, label: { en: "Price", fr: "Prix" }, default: "", max_length: 16 }
+buttons:
+  - id: confirm
+    label: { en: "<green>Put on sale", fr: "<green>Mettre en vente" }
+    actions:
+      - run_command: "auctions:sell sale {price}"
+      - open_menu: ah_main
+  - id: cancel
+    label: { en: "Cancel", fr: "Annuler" }
+    actions: [ close_dialog ]

@@ -56,6 +56,8 @@ object ConfigModel {
                 field("allowed", mapOf("kind" to "list", "of" to mapOf("kind" to "string")), "Allowed currencies",
                     help = "Ids registered with Artisan (vault, playerpoints…).", default = listOf("vault")),
                 field("default", mapOf("kind" to "string"), "Default currency", default = "vault"),
+                field("display", mapOf("kind" to "map", "of" to mapOf("kind" to "string")), "How amounts are written",
+                    help = "Per currency id; {amount} is replaced, e.g. vault: \"{amount} \$\".", default = mapOf("vault" to "{amount} \$")),
             ),
             obj("items", "Items",
                 field("blacklist", mapOf("kind" to "list", "of" to mapOf("kind" to "string")), "Forbidden materials",

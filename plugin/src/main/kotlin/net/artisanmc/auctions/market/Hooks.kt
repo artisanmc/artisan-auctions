@@ -40,6 +40,8 @@ interface Hooks {
     fun expired(listing: Listing) {}
     fun cancelled(listing: Listing, actor: UUID) {}
     fun claimed(claim: Claim) {}
+    /** The claims box of these players changed (main thread): menus showing it are stale. */
+    fun claimsChanged(owners: Set<UUID>) {}
 
     object None : Hooks
 }

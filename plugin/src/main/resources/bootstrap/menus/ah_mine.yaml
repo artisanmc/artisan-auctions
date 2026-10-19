@@ -1,0 +1,67 @@
+schema: menu/v1
+title:
+  - kind: plain
+    value: { en: "<dark_gray>My listings", fr: "<dark_gray>Mes annonces" }
+size: 54
+refresh_interval: 5
+inputs:
+  - name: summary
+    type: list
+    source: { ref: "auctions:summary" }
+  - name: listings
+    type: list
+    source:
+      ref: "auctions:my_listings"
+      params: { sort: "ending" }
+elements:
+  - id: border
+    positions: "0-8,9,17,18,26,27,35,36,44,46,47,49,51,52"
+    material: GRAY_STAINED_GLASS_PANE
+    title: " "
+  - id: info
+    positions: 4
+    material: BOOK
+    title: { en: "<yellow>{summary[0].mine}/{summary[0].limit} listings", fr: "<yellow>{summary[0].mine}/{summary[0].limit} annonces" }
+    lore:
+      - { en: "<gray>Unsold items return to your claims box", fr: "<gray>Les invendus reviennent dans votre récupération" }
+  - id: grid
+    positions: "10-16,19-25,28-34,37-43"
+    iterates: { source: listings, alias: l }
+    item: "{l.icon}"
+    lore:
+      - ""
+      - { en: "<gray>{l.is_auction ? \"Opening bid\" : \"Price\"}: <gold>{l.is_auction ? l.start_price_display : l.price_display}", fr: "<gray>{l.is_auction ? \"Mise de départ\" : \"Prix\"} : <gold>{l.is_auction ? l.start_price_display : l.price_display}" }
+      - { en: "{l.has_bids ? \"<gray>Best bid: <gold>\" : \"\"}{l.has_bids ? l.current_bid_display : \"\"}", fr: "{l.has_bids ? \"<gray>Meilleure offre : <gold>\" : \"\"}{l.has_bids ? l.current_bid_display : \"\"}" }
+      - { en: "<gray>Ends in: <white>{l.ends_at.until()}", fr: "<gray>Fin dans : <white>{l.ends_at.until()}" }
+      - ""
+      - { en: "<red>Click to withdraw", fr: "<red>Cliquer pour retirer" }
+    click:
+      left: [ { run_command: "auctions:cancel {l.id}" } ]
+  - id: back
+    positions: 45
+    material: ARROW
+    title: { en: "<white>Back", fr: "<white>Retour" }
+    click: { left: [ open_previous_menu ] }
+  - id: prev
+    positions: 48
+    material: ARROW
+    title: { en: "<white>Previous page", fr: "<white>Page précédente" }
+    click: { left: [ { pagination_prev: grid } ] }
+    states:
+      - if: [ { pagination_at_first: grid } ]
+        material: GRAY_STAINED_GLASS_PANE
+        title: " "
+  - id: next
+    positions: 50
+    material: ARROW
+    title: { en: "<white>Next page", fr: "<white>Page suivante" }
+    click: { left: [ { pagination_next: grid } ] }
+    states:
+      - if: [ { pagination_at_last: grid } ]
+        material: GRAY_STAINED_GLASS_PANE
+        title: " "
+  - id: close
+    positions: 53
+    material: BARRIER
+    title: { en: "<red>Close", fr: "<red>Fermer" }
+    click: { left: [ close_menu ] }

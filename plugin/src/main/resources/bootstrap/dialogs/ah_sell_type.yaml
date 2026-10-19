@@ -1,0 +1,16 @@
+schema: dialog/v1
+title: { en: "Sell {item_name}", fr: "Vendre {item_name}" }
+can_close_with_escape: true
+body:
+  - { type: text, text: { en: "How do you want to sell <white>{quantity}× {item_name}<reset>?", fr: "Comment voulez-vous vendre <white>{quantity}× {item_name}<reset> ?" } }
+  - { type: text, text: { en: "<gray>Fixed price: the first buyer gets it.\n<gray>Auction: the best bid wins at the end.", fr: "<gray>Prix fixe : le premier acheteur l'emporte.\n<gray>Enchère : la meilleure offre gagne à la fin." } }
+buttons:
+  - id: sale
+    label: { en: "<green>Fixed price", fr: "<green>Prix fixe" }
+    actions: [ { run_command: "auctions:sell_start sale" } ]
+  - id: auction
+    label: { en: "<gold>Auction", fr: "<gold>Enchère" }
+    actions: [ { run_command: "auctions:sell_start auction" } ]
+  - id: cancel
+    label: { en: "Cancel", fr: "Annuler" }
+    actions: [ close_dialog ]

@@ -1,0 +1,31 @@
+schema: menu/v1
+title:
+  - kind: plain
+    value: { en: "<dark_gray>Lot contents", fr: "<dark_gray>Contenu du lot" }
+size: 54
+inputs:
+  - { name: id, type: string, default: "" }
+  - name: items
+    type: list
+    source:
+      ref: "auctions:lot"
+      params: { id: "{id}" }
+elements:
+  - id: border
+    positions: "45-48,50-52"
+    material: GRAY_STAINED_GLASS_PANE
+    title: " "
+  - id: grid
+    positions: "0-44"
+    iterates: { source: items, alias: i }
+    item: "{i.icon}"
+  - id: back
+    positions: 49
+    material: ARROW
+    title: { en: "<white>Back", fr: "<white>Retour" }
+    click: { left: [ open_previous_menu ] }
+  - id: close
+    positions: 53
+    material: BARRIER
+    title: { en: "<red>Close", fr: "<red>Fermer" }
+    click: { left: [ close_menu ] }

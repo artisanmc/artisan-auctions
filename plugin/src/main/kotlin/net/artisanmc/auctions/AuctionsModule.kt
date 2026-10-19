@@ -2,6 +2,8 @@ package net.artisanmc.auctions
 
 import net.artisanmc.auctions.config.ConfigModel
 import net.artisanmc.auctions.config.ConfigStore
+import net.artisanmc.auctions.paper.AuctionHouse
+import net.artisanmc.auctions.paper.ModuleBindings
 import net.artisanmc.auctions.sources.SettingsSource
 import net.artisanmc.modules.api.ArtisanAPI
 import net.artisanmc.modules.api.ArtisanModule
@@ -15,6 +17,7 @@ import java.util.logging.Logger
 class AuctionsModule(
     private val config: ConfigStore,
     private val logger: Logger,
+    private val house: (ArtisanAPI) -> AuctionHouse,
 ) : ArtisanModule {
     override val id: String = ID
     override val schemaVersion: String = "auctions/v1"
@@ -27,6 +30,7 @@ class AuctionsModule(
         api.screens.declare(SETTINGS_SCREEN, "Settings", CONFIG_PATH.removeSuffix(".yaml"), PROJECT_ID)
         api.dataSources.register(SettingsSource.declaration { config.current })
         loadConfig(api)
+        ModuleBindings.declare(api, house(api))
     }
 
     /** After each sync from the editor and `/artisan reload`. */

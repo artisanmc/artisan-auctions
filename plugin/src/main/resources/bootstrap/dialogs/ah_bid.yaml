@@ -1,0 +1,23 @@
+schema: dialog/v1
+title: { en: "Bid on {name}", fr: "Enchérir sur {name}" }
+can_close_with_escape: true
+body:
+  - { type: text, text: { en: "Seller: <white>{seller}", fr: "Vendeur : <white>{seller}" } }
+  - { type: text, text: { en: "Lowest bid: <gold>{min_bid_display}", fr: "Offre minimale : <gold>{min_bid_display}" } }
+  - { type: text, text: { en: "<gray>Your bid is held until someone outbids you.", fr: "<gray>Votre offre est retenue jusqu'à ce qu'on la dépasse." } }
+inputs:
+  - { id: amount, type: text, label: { en: "Your bid", fr: "Votre offre" }, default: "", max_length: 16 }
+buttons:
+  - id: confirm
+    label: { en: "<gold>Bid", fr: "<gold>Enchérir" }
+    actions:
+      - run_command: "auctions:bid {id} {amount}"
+      - open_previous_menu
+  - id: min
+    label: { en: "Bid the minimum", fr: "Offre minimale" }
+    actions:
+      - run_command: "auctions:bid {id} {min_bid}"
+      - open_previous_menu
+  - id: cancel
+    label: { en: "Cancel", fr: "Annuler" }
+    actions: [ open_previous_menu ]

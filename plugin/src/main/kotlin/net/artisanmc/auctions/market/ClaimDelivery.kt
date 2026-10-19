@@ -34,7 +34,12 @@ class ClaimDelivery(
             }
         }
         val skipped = claims - eligible.toSet()
-        if (eligible.isEmpty()) { done(Report(emptyList(), skipped)); return }
+        val owners = claims.mapTo(HashSet()) { it.owner }
+        if (eligible.isEmpty()) {
+            if (owners.isNotEmpty()) hooks().claimsChanged(owners)
+            done(Report(emptyList(), skipped))
+            return
+        }
         threads.async {
             val taken = eligible.filter { c ->
                 runCatching { store.markClaimed(c.id, clock()) }
@@ -52,8 +57,14 @@ class ClaimDelivery(
                     if (ok) delivered += c else failed += c
                 }
                 delivered.forEach { hooks().claimed(it) }
-                if (failed.isNotEmpty()) threads.async { failed.forEach { runCatching { store.reopenClaim(it.id) } } }
-                done(Report(delivered, skipped + failed + (eligible - taken.toSet())))
+                val report = Report(delivered, skipped + failed + (eligible - taken.toSet()))
+                if (failed.isEmpty()) {
+                    hooks().claimsChanged(owners)
+                } else threads.async {
+                    failed.forEach { runCatching { store.reopenClaim(it.id) } }
+                    threads.main { hooks().claimsChanged(owners) }
+                }
+                done(report)
             }
         }
     }

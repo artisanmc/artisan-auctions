@@ -3,7 +3,3 @@ name: Auctions
 default_lang: en
 languages: [en, fr]
 lore_max_width: 240
-files:
-  menus: []
-  commands: []
-  dialogs: []
