@@ -21,6 +21,7 @@ object ModuleBindings {
     const val LOT = "auctions:lot"
     const val CLAIMS = "auctions:claims"
     const val SUMMARY = "auctions:summary"
+    const val PRICE = "auctions:price"
 
     val LISTING_FIELDS = listOf(
         DataSourceField("id", FieldKind.STRING, "Listing id, for auctions:buy / bid / cancel"),
@@ -50,19 +51,25 @@ object ModuleBindings {
         DataSourceField("created_at", FieldKind.NUMBER, "Epoch millis"),
         DataSourceField("ends_at", FieldKind.NUMBER, "Epoch millis, for {l.ends_at.until()}"),
         DataSourceField("ended", FieldKind.BOOLEAN, "Past its end, closing"),
+        DataSourceField("has_median", FieldKind.BOOLEAN, "Enough sales of this item for a median"),
+        DataSourceField("median_display", FieldKind.STRING, "Median price of one item, formatted"),
+        DataSourceField("median_sales", FieldKind.INTEGER, "Sales the median rests on"),
+        DataSourceField("median_days", FieldKind.INTEGER, "Days those sales cover"),
+        DataSourceField("median_ratio", FieldKind.INTEGER, "Unit price against the median, in percent (-20 = 20 % below)"),
+        DataSourceField("median_ratio_display", FieldKind.STRING, "median_ratio as text: -20 %, +15 %"),
     )
 
     fun declare(api: ArtisanAPI, house: AuctionHouse) {
         val now = System::currentTimeMillis
         api.dataSources.register(DataSourceDeclaration(LISTINGS, { player, params ->
             val q = ListingRows.Query.of(params)
-            ListingRows.select(house.cache.all(), q, now()).map { ListingRows.row(it, player?.uniqueId, house.config(), now()) }
+            ListingRows.select(house.cache.all(), q, now()).map { ListingRows.row(it, player?.uniqueId, house.config(), now(), house.medianOf(it)) }
         }, LISTING_FIELDS))
 
         api.dataSources.register(DataSourceDeclaration(MY_LISTINGS, { player, params ->
             val viewer = player?.uniqueId ?: return@DataSourceDeclaration emptyList()
             val q = ListingRows.Query.of(params, seller = viewer)
-            ListingRows.select(house.cache.all(), q, now()).map { ListingRows.row(it, viewer, house.config(), now()) }
+            ListingRows.select(house.cache.all(), q, now()).map { ListingRows.row(it, viewer, house.config(), now(), house.medianOf(it)) }
         }, LISTING_FIELDS))
 
         api.dataSources.register(DataSourceDeclaration(LOT, { _, params ->
@@ -108,6 +115,26 @@ object ModuleBindings {
             DataSourceField("claims", FieldKind.INTEGER, "Items and amounts waiting in the viewer's box"),
         ), stability = Stability.DYNAMIC))
 
+        // The median of the held item (or of `item`, a material name), for any menu.
+        api.dataSources.register(DataSourceDeclaration(PRICE, { player, params ->
+            val currency = params["currency"]?.toString()?.takeIf { it.isNotBlank() } ?: house.config().currencies.default
+            val stack = params["item"]?.toString()?.takeIf { it.isNotBlank() }
+                ?.let { runCatching { org.bukkit.inventory.ItemStack(org.bukkit.Material.valueOf(it.uppercase()), 1) }.getOrNull() }
+                ?: player?.inventory?.itemInMainHand?.takeUnless { it.type.isAir }
+                ?: return@DataSourceDeclaration listOf(mapOf("id" to "price", "has_item" to false, "has_median" to false))
+            val key = house.priceKey(stack)
+            listOf(mapOf("id" to "price", "has_item" to true, "key" to key) + house.medianArgs(house.medians.get(key, currency), currency))
+        }, listOf(
+            DataSourceField("id", FieldKind.STRING, "Always `price`"),
+            DataSourceField("has_item", FieldKind.BOOLEAN, "An item was found (held, or given by `item`)"),
+            DataSourceField("key", FieldKind.STRING, "The item's price key"),
+            DataSourceField("has_median", FieldKind.BOOLEAN, "Enough sales for a median"),
+            DataSourceField("median", FieldKind.STRING, "Median price of one item, formatted (- when unknown)"),
+            DataSourceField("median_sales", FieldKind.INTEGER, "Sales the median rests on"),
+            DataSourceField("median_days", FieldKind.INTEGER, "Days those sales cover"),
+        )))
+
+        command(api, "auctions:sell_confirm") { p, _ -> house.confirmSell(p) }
         command(api, "auctions:sell_start") { p, argv -> house.sellStart(p, argv.firstOrNull()?.let(::typeOf)) }
         command(api, "auctions:sell") { p, argv ->
             val type = argv.getOrNull(0)?.let(::typeOf) ?: return@command house.notifier.tell(p, "bad_command")

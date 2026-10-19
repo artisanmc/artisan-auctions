@@ -4,6 +4,8 @@ import net.artisanmc.auctions.api.ListingType
 import net.artisanmc.auctions.config.AuctionsConfig
 import net.artisanmc.auctions.market.Fees
 import net.artisanmc.auctions.market.Listing
+import net.artisanmc.auctions.median.MedianMath
+import net.artisanmc.auctions.median.MedianPrice
 import java.math.BigDecimal
 import java.util.UUID
 
@@ -81,13 +83,24 @@ object ListingRows {
     fun prettyMaterial(material: String): String =
         material.lowercase().split('_').filter { it.isNotEmpty() }.joinToString(" ") { it.replaceFirstChar(Char::uppercase) }
 
+    /** `-20 %`, `+15 %`, `=` . */
+    fun ratioText(r: Int): String = when {
+        r > 0 -> "+$r %"
+        r < 0 -> "$r %"
+        else -> "="
+    }
+
     fun name(l: Listing): String {
         val first = l.items.firstOrNull() ?: return "?"
         val title = first.display["title"]?.toString()?.takeIf { it.isNotBlank() }
         return title ?: prettyMaterial(first.display["material"]?.toString() ?: "STONE")
     }
 
-    fun row(l: Listing, viewer: UUID?, c: AuctionsConfig, now: Long): Map<String, Any?> {
+    /** Price of one item of [l], what the median compares. */
+    fun unitPrice(l: Listing): BigDecimal =
+        shownPrice(l).divide(BigDecimal(l.quantity.coerceAtLeast(1)), 4, java.math.RoundingMode.HALF_UP)
+
+    fun row(l: Listing, viewer: UUID?, c: AuctionsConfig, now: Long, median: MedianPrice? = null): Map<String, Any?> {
         val fmt = { v: BigDecimal? -> v?.let { c.currencies.format(l.currency, it) } ?: "" }
         val buyNow = when (l.type) {
             ListingType.SALE -> l.price
@@ -126,6 +139,12 @@ object ListingRows {
             "created_at" to l.createdAt,
             "ends_at" to l.endsAt,
             "ended" to (l.endsAt <= now),
+            "has_median" to (median?.price != null),
+            "median_display" to (median?.price?.let { fmt(it) } ?: ""),
+            "median_sales" to (median?.sales ?: 0),
+            "median_days" to (median?.windowDays ?: 0),
+            "median_ratio" to (median?.price?.let { MedianMath.ratio(unitPrice(l), it) } ?: 0),
+            "median_ratio_display" to (median?.price?.let { ratioText(MedianMath.ratio(unitPrice(l), it)) } ?: ""),
         )
     }
 }

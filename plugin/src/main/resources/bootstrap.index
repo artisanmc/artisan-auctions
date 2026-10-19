@@ -1,6 +1,7 @@
 data/config.yaml
 dialogs/ah_bid.yaml
 dialogs/ah_confirm_buy.yaml
+dialogs/ah_price_warning.yaml
 dialogs/ah_search.yaml
 dialogs/ah_sell_auction.yaml
 dialogs/ah_sell_fixed.yaml

@@ -4,6 +4,7 @@ can_close_with_escape: true
 body:
   - { type: text, text: { en: "<white>{quantity}× {item_name}", fr: "<white>{quantity}× {item_name}" } }
   - { type: text, text: { en: "<gray>Listing fee: {fee}. Sale tax: {tax}. Amounts in {currency}.", fr: "<gray>Frais de mise en vente : {fee}. Taxe sur la vente : {tax}. Montants en {currency}." } }
+  - { type: text, text: { en: "<gray>Median price: <gold>{median}<gray> each, over {median_sales} sales in {median_days} days.", fr: "<gray>Prix médian : <gold>{median}<gray> l'unité, sur {median_sales} ventes en {median_days} jours." } }
 inputs:
   - { id: start, type: text, label: { en: "Opening bid", fr: "Mise de départ" }, default: "", max_length: 16 }
   # Keep these options in step with auctions.durations in data/config.yaml.

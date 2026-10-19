@@ -52,7 +52,7 @@ class AhCommand(private val house: AuctionHouse, private val admin: AdminCommand
     }
 }
 
-/** `/ah admin cancel <id>`, `closeall [player]`. The importer adds `import`. */
+/** `/ah admin cancel <id>`, `closeall [player]`, `reindex`. The importer adds `import`. */
 class AdminCommands(private val house: AuctionHouse) {
     private val extra = LinkedHashMap<String, (CommandSender, List<String>) -> Unit>()
 
@@ -74,14 +74,18 @@ class AdminCommands(private val house: AuctionHouse) {
                 }
                 sender.sendMessage("Cancelling ${house.cancelAll(p, seller)} listing(s); items go to the sellers' claims")
             }
-            null -> sender.sendMessage("/ah admin cancel <id> | closeall [player]" + extra.keys.joinToString("") { " | $it" })
+            "reindex" -> {
+                sender.sendMessage("Reindexing price keys in the background…")
+                house.reindex { sender.sendMessage(it) }
+            }
+            null -> sender.sendMessage("/ah admin cancel <id> | closeall [player] | reindex" + extra.keys.joinToString("") { " | $it" })
             else -> extra[sub]?.invoke(sender, args.drop(1)) ?: sender.sendMessage("Unknown admin command $sub")
         }
         return true
     }
 
     fun complete(args: List<String>): List<String> = when (args.size) {
-        1 -> (listOf("cancel", "closeall") + extra.keys).filter { it.startsWith(args[0].lowercase()) }
+        1 -> (listOf("cancel", "closeall", "reindex") + extra.keys).filter { it.startsWith(args[0].lowercase()) }
         2 -> if (args[0].equals("cancel", true)) house.cache.all().map { it.id.toString().take(8) }.filter { it.startsWith(args[1]) }
             else emptyList()
         else -> emptyList()

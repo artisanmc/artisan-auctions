@@ -154,6 +154,32 @@ class AuctionStore(private val ds: DataSource) {
         }
     }
 
+    // ── Reindexing price keys ────────────────────────────────────────────────
+
+    /** A page of this server's listings (any status) with their items, by id, after [afterId]. */
+    fun listingsPage(server: String, afterId: String, limit: Int): List<Listing> = read { c ->
+        val rows = c.prepareStatement("SELECT * FROM auc_listings WHERE server = ? AND id > ? ORDER BY id LIMIT ?").use { s ->
+            s.setString(1, server); s.setString(2, afterId); s.setInt(3, limit)
+            s.executeQuery().use { rs -> buildList { while (rs.next()) add(listingRow(rs)) } }
+        }
+        attachItems(c, rows)
+    }
+
+    /** New keys of a listing's items and, when they all agree, of its sale rows. */
+    fun updatePriceKeys(listing: UUID, keys: Map<Int, String>, saleKey: String?) = tx { c ->
+        c.prepareStatement("UPDATE auc_listing_items SET price_key = ? WHERE listing_id = ? AND slot_index = ?").use { s ->
+            for ((slot, key) in keys) {
+                s.setString(1, key); s.setString(2, listing.toString()); s.setInt(3, slot); s.addBatch()
+            }
+            s.executeBatch()
+        }
+        if (saleKey != null) {
+            c.prepareStatement("UPDATE auc_sales SET price_key = ? WHERE listing_id = ?").use { s ->
+                s.setString(1, saleKey); s.setString(2, listing.toString()); s.executeUpdate()
+            }
+        }
+    }
+
     // ── Claims ───────────────────────────────────────────────────────────────
 
     fun insertClaims(claims: List<Claim>) { if (claims.isNotEmpty()) tx { c -> insertClaims(c, claims) } }
