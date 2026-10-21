@@ -5,7 +5,7 @@ import net.artisanmc.auctions.config.formatDuration
 import net.artisanmc.modules.api.datasource.DataFetcher
 import net.artisanmc.modules.api.datasource.DataSourceDeclaration
 import net.artisanmc.modules.api.datasource.DataSourceField
-import net.artisanmc.modules.api.datasource.FieldKind
+import net.artisanmc.modules.api.model.ModelFieldType
 import net.artisanmc.modules.api.datasource.Stability
 
 /**
@@ -36,19 +36,19 @@ object SettingsSource {
         REF,
         DataFetcher { _, _ -> listOf(row(config())) },
         listOf(
-            DataSourceField("id", FieldKind.STRING, "Always `settings`"),
-            DataSourceField("sales_enabled", FieldKind.BOOLEAN, "Fixed-price sales can be created"),
-            DataSourceField("auctions_enabled", FieldKind.BOOLEAN, "Auctions can be created"),
-            DataSourceField("both", FieldKind.BOOLEAN, "Both kinds are enabled: show the type tabs"),
-            DataSourceField("read_only", FieldKind.BOOLEAN, "Nothing can be listed; claims still work"),
-            DataSourceField("buyout", FieldKind.BOOLEAN, "Auctions may carry a buy-now price"),
-            DataSourceField("currencies", FieldKind.LIST, "Currency ids a listing may use"),
-            DataSourceField("default_currency", FieldKind.STRING, "Currency used when the seller picks none"),
-            DataSourceField("multi_currency", FieldKind.BOOLEAN, "More than one currency: ask the seller"),
-            DataSourceField("durations", FieldKind.LIST, "Auction durations offered, e.g. 24h"),
-            DataSourceField("default_duration", FieldKind.STRING, "Preselected auction duration"),
-            DataSourceField("sale_duration", FieldKind.STRING, "Lifetime of a fixed-price listing"),
-            DataSourceField("max_active_listings", FieldKind.INTEGER, "Listings per player, before permissions"),
+            DataSourceField("id", ModelFieldType.string(), "Always `settings`"),
+            DataSourceField("sales_enabled", ModelFieldType.bool(), "Fixed-price sales can be created"),
+            DataSourceField("auctions_enabled", ModelFieldType.bool(), "Auctions can be created"),
+            DataSourceField("both", ModelFieldType.bool(), "Both kinds are enabled: show the type tabs"),
+            DataSourceField("read_only", ModelFieldType.bool(), "Nothing can be listed; claims still work"),
+            DataSourceField("buyout", ModelFieldType.bool(), "Auctions may carry a buy-now price"),
+            DataSourceField("currencies", ModelFieldType.list(ModelFieldType.string()), "Currency ids a listing may use"),
+            DataSourceField("default_currency", ModelFieldType.string(), "Currency used when the seller picks none"),
+            DataSourceField("multi_currency", ModelFieldType.bool(), "More than one currency: ask the seller"),
+            DataSourceField("durations", ModelFieldType.list(ModelFieldType.string()), "Auction durations offered, e.g. 24h"),
+            DataSourceField("default_duration", ModelFieldType.string(), "Preselected auction duration"),
+            DataSourceField("sale_duration", ModelFieldType.string(), "Lifetime of a fixed-price listing"),
+            DataSourceField("max_active_listings", ModelFieldType.integer(), "Listings per player, before permissions"),
         ),
         Stability.STATIC,
         "id",
