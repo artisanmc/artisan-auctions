@@ -6,6 +6,7 @@ import net.artisanmc.modules.api.playercommand.PlayerCommandContext
 import net.artisanmc.modules.api.playercommand.PlayerCommandDeclaration
 import net.artisanmc.modules.api.playercommand.PlayerCommandExecutor
 import org.bukkit.Bukkit
+import org.bukkit.OfflinePlayer
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -110,7 +111,7 @@ class AdminCommands(private val house: AuctionHouse, private val imports: Import
 
     fun closeAll(p: Player, name: String?) {
         val seller = name?.let {
-            Bukkit.getOfflinePlayerIfCached(it)?.uniqueId ?: return p.sendMessage("Unknown player $it")
+            cachedOfflinePlayer(it)?.uniqueId ?: return p.sendMessage("Unknown player $it")
         }
         p.sendMessage("Cancelling ${house.cancelAll(p, seller)} listing(s); items go to the sellers' claims")
     }
@@ -124,4 +125,11 @@ class AdminCommands(private val house: AuctionHouse, private val imports: Import
 class PlayerListener(private val house: AuctionHouse) : Listener {
     @EventHandler fun onJoin(e: PlayerJoinEvent) = house.join(e.player)
     @EventHandler fun onQuit(e: PlayerQuitEvent) = house.quit(e.player)
+}
+
+/** A player the server has seen, by name, without a Mojang lookup. Paper indexes them; Spigot is scanned. */
+internal fun cachedOfflinePlayer(name: String): OfflinePlayer? = try {
+    Bukkit.getOfflinePlayerIfCached(name)
+} catch (_: NoSuchMethodError) {
+    Bukkit.getOfflinePlayers().firstOrNull { it.name.equals(name, ignoreCase = true) }
 }
