@@ -30,6 +30,21 @@ class MigrationsTest {
         assertTrue(P + "claims" in tables())
     }
 
+    @Test fun `tables of a build before the prefix are renamed, rows and version kept`() {
+        Migrations(ds, logger, "auc_").run()
+        ds.connection.use { c ->
+            c.createStatement().use { it.execute("INSERT INTO auc_sales VALUES ('s', 'l', 'srv', 'sale', 'k', 'vault', 3, 10.01, 3.34, 'a', 'b', 0)") }
+        }
+        assertEquals(Schema.migrations(P).maxOf { it.version }, Migrations(ds, logger, P).run())
+        val legacy = ds.connection.use { c ->
+            c.metaData.getTables(null, null, "AUC_%", arrayOf("TABLE")).use { rs -> rs.next() }
+        }
+        assertFalse(legacy, "no auc_ table left")
+        ds.connection.use { c ->
+            c.createStatement().use { s -> s.executeQuery("SELECT COUNT(*) FROM ${P}sales").use { rs -> rs.next(); assertEquals(1, rs.getInt(1)) } }
+        }
+    }
+
     @Test fun `a database newer than the plugin is refused`() {
         Migrations(ds, logger, P).run()
         ds.connection.use { c ->

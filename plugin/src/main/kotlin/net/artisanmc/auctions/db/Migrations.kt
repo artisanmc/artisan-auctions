@@ -11,6 +11,10 @@ import javax.sql.DataSource
  * the middle of a migration: MySQL commits DDL statement by statement, so a
  * migration may be replayed over tables it already created. Tables use
  * `IF NOT EXISTS`; an index that fails to create is accepted when it exists.
+ *
+ * Builds before the table prefix named the tables `auc_*`: when `auc_schema_history` exists
+ * and `{prefix}schema_history` does not, those tables are renamed once to the prefix, their
+ * rows and recorded version kept.
  */
 class Migrations(
     private val dataSource: DataSource,
@@ -22,6 +26,7 @@ class Migrations(
 ) {
     /** Returns the schema version after the run. */
     fun run(): Int = dataSource.connection.use { c ->
+        adoptLegacyTables(c)
         c.createStatement().use {
             it.execute(
                 "CREATE TABLE IF NOT EXISTS ${prefix}schema_history (" +
@@ -46,6 +51,25 @@ class Migrations(
             current = m.version
         }
         current
+    }
+
+    private fun adoptLegacyTables(c: Connection) {
+        if (prefix == LEGACY_PREFIX || !tableExists(c, LEGACY_PREFIX + "schema_history")
+            || tableExists(c, prefix + "schema_history")) return
+        for (name in TABLES) {
+            if (!tableExists(c, LEGACY_PREFIX + name)) continue
+            c.createStatement().use { it.execute("ALTER TABLE $LEGACY_PREFIX$name RENAME TO $prefix$name") }
+        }
+        if (!c.autoCommit) c.commit()
+        logger.info("[Auctions] tables auc_* renamed to $prefix* (Artisan's table prefix)")
+    }
+
+    private fun tableExists(c: Connection, table: String): Boolean {
+        val meta = c.metaData
+        for (t in listOf(table, table.uppercase(), table.lowercase()).distinct()) {
+            meta.getTables(c.catalog, null, t, arrayOf("TABLE")).use { rs -> if (rs.next()) return true }
+        }
+        return false
     }
 
     private fun currentVersion(c: Connection): Int =
@@ -73,6 +97,9 @@ class Migrations(
     }
 
     private companion object {
+        /** The tables' prefix before Artisan's table prefix (API 2.9.0). */
+        const val LEGACY_PREFIX = "auc_"
+        val TABLES = listOf("listings", "listing_items", "bids", "sales", "claims", "import_map", "payments", "schema_history")
         val CREATE_INDEX = Regex("^CREATE\\s+INDEX\\s+(\\w+)\\s+ON\\s+(\\w+)", RegexOption.IGNORE_CASE)
     }
 }
