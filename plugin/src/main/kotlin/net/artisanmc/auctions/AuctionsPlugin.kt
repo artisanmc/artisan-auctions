@@ -9,6 +9,7 @@ import net.artisanmc.auctions.paper.AhCommand
 import net.artisanmc.auctions.paper.AuctionHouse
 import net.artisanmc.auctions.paper.Currencies
 import net.artisanmc.auctions.paper.Imports
+import net.artisanmc.auctions.paper.PaperItems
 import net.artisanmc.auctions.paper.PlayerListener
 import net.artisanmc.auctions.files.DefaultFiles
 import net.artisanmc.modules.api.ArtisanAPI
@@ -35,6 +36,7 @@ class AuctionsPlugin : JavaPlugin() {
             return
         }
         serverId = loadServerId()
+        PaperItems.text = api.text
 
         try {
             dataSource = api.database.dataSource(this)
@@ -91,7 +93,7 @@ class AuctionsPlugin : JavaPlugin() {
 
     companion object {
         /** First API with module folders (`projectRoots.moduleFolder`); player commands since 2.7.0. */
-        const val MIN_CORE_API = "2.8.0"
+        const val MIN_CORE_API = "2.10.0"
         /** Ends due listings every 5 s. */
         const val EXPIRY_TICKS = 100L
         /** Purges claims past their retention every hour. */

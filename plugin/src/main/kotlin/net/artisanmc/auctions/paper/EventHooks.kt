@@ -47,7 +47,7 @@ class EventHooks(
 ) : Hooks {
     private fun call(e: Event) = Bukkit.getPluginManager().callEvent(e)
 
-    private fun veto(e: CancellableAuctionEvent): Veto? = if (e.isCancelled) Veto(e.denyMessage()) else null
+    private fun veto(e: CancellableAuctionEvent): Veto? = if (e.isCancelled) Veto(e.denial()) else null
 
     override fun preList(request: ListRequest): Pair<ListRequest?, Veto?> {
         val seller = Bukkit.getPlayer(request.seller) ?: return request to null
