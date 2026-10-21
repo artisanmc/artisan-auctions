@@ -102,11 +102,13 @@ Inside the plugin, Bukkit stays at the edge so the rules are tested without a se
 
 ## Build
 
-Requires Artisan 2 with the API 2.8.0 (module folders, player commands). Paper only: the
-plugin is not marked for Folia. Until the API is released:
+Requires Artisan 2 with the API 2.10.0 (module folders, player commands, text without
+Adventure). Paper or Spigot; the plugin is not marked for Folia. On Paper, items are stored
+with Paper's byte serialization; on Spigot, with Bukkit's YAML serialization (`yaml:` prefix).
+A server moving from Paper to Spigot cannot read the items stored on Paper. Until the API is released:
 
 ```bash
-cd ../artisan/plugin && ./gradlew :api:publishToMavenLocal -PapiVersion=2.8.0
+cd ../artisan/plugin && ./gradlew :api:publishToMavenLocal -PapiVersion=2.10.0
 cd ../../artisan-auctions && ./gradlew build   # → plugin/build/libs/ArtisanAuctions-<version>.jar
 ```
 
