@@ -1,5 +1,6 @@
 package net.artisanmc.auctions.market
 
+import net.artisanmc.auctions.P
 import net.artisanmc.auctions.api.ListingType
 import net.artisanmc.auctions.config.AuctionsConfig
 import net.artisanmc.auctions.db.AuctionStore
@@ -57,7 +58,7 @@ class FakeGiver : ItemGiver {
 class MarketTest {
     private val ds = JdbcDataSource().apply { setURL("jdbc:h2:mem:market_${System.nanoTime()};DB_CLOSE_DELAY=-1") }
     private val logger = Logger.getAnonymousLogger()
-    private val store = AuctionStore(ds).also { Migrations(ds, logger).run() }
+    private val store = AuctionStore(ds, P).also { Migrations(ds, logger, P).run() }
     private val threads = QueueThreads()
     private val wallets = FakeWallets("vault", "tokens")
     private val giver = FakeGiver()

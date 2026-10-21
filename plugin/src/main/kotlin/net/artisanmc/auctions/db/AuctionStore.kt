@@ -25,8 +25,9 @@ import javax.sql.DataSource
  * executor, never from the main thread. Each state change of a listing is a
  * compare-and-swap on `status = 'active' AND row_version = ?`, so a listing is
  * sold, expired or cancelled exactly once, even with two servers on one database.
+ * [prefix] is `api.database.tablePrefix(Schema.MODULE)`, such as `artisan_auctions_`.
  */
-class AuctionStore(private val ds: DataSource) {
+class AuctionStore(private val ds: DataSource, private val prefix: String) {
 
     private val gson = Gson()
     private val mapType = object : TypeToken<Map<String, Any?>>() {}.type
@@ -37,7 +38,7 @@ class AuctionStore(private val ds: DataSource) {
 
     private fun insertListing(c: Connection, l: Listing) {
         c.prepareStatement(
-            "INSERT INTO auc_listings (id, server, listing_type, status, seller_uuid, seller_name, currency, price, " +
+            "INSERT INTO ${prefix}listings (id, server, listing_type, status, seller_uuid, seller_name, currency, price, " +
                 "start_price, current_bid, current_bidder, bid_count, created_at, ends_at, row_version) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         ).use { s ->
@@ -49,7 +50,7 @@ class AuctionStore(private val ds: DataSource) {
             s.executeUpdate()
         }
         c.prepareStatement(
-            "INSERT INTO auc_listing_items (listing_id, slot_index, item_blob, item_display, price_key, quantity) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO ${prefix}listing_items (listing_id, slot_index, item_blob, item_display, price_key, quantity) VALUES (?, ?, ?, ?, ?, ?)",
         ).use { s ->
             for (item in l.items) {
                 s.setString(1, l.id.toString()); s.setInt(2, item.slot); s.setString(3, item.blob)
@@ -61,7 +62,7 @@ class AuctionStore(private val ds: DataSource) {
     }
 
     fun activeListings(server: String): List<Listing> = read { c ->
-        val rows = c.prepareStatement("SELECT * FROM auc_listings WHERE server = ? AND status = 'active'").use { s ->
+        val rows = c.prepareStatement("SELECT * FROM ${prefix}listings WHERE server = ? AND status = 'active'").use { s ->
             s.setString(1, server)
             s.executeQuery().use { rs -> buildList { while (rs.next()) add(listingRow(rs)) } }
         }
@@ -69,7 +70,7 @@ class AuctionStore(private val ds: DataSource) {
     }
 
     fun listing(id: UUID): Listing? = read { c ->
-        val row = c.prepareStatement("SELECT * FROM auc_listings WHERE id = ?").use { s ->
+        val row = c.prepareStatement("SELECT * FROM ${prefix}listings WHERE id = ?").use { s ->
             s.setString(1, id.toString())
             s.executeQuery().use { rs -> if (rs.next()) listingRow(rs) else null }
         } ?: return@read null
@@ -90,7 +91,7 @@ class AuctionStore(private val ds: DataSource) {
         bids: String? = null,
     ): Boolean = tx { c ->
         val changed = c.prepareStatement(
-            "UPDATE auc_listings SET status = ?, closed_at = ?, row_version = row_version + 1" +
+            "UPDATE ${prefix}listings SET status = ?, closed_at = ?, row_version = row_version + 1" +
                 (if (winner != null) ", current_bidder = ?" else "") +
                 " WHERE id = ? AND status = 'active' AND row_version = ?",
         ).use { s ->
@@ -105,7 +106,7 @@ class AuctionStore(private val ds: DataSource) {
         insertSales(c, sales)
         if (payment != null) setPaymentState(c, payment, PaymentState.SETTLED)
         if (bids != null) {
-            c.prepareStatement("UPDATE auc_bids SET state = ? WHERE listing_id = ? AND state = 'held'").use { s ->
+            c.prepareStatement("UPDATE ${prefix}bids SET state = ? WHERE listing_id = ? AND state = 'held'").use { s ->
                 s.setString(1, bids); s.setString(2, id.toString()); s.executeUpdate()
             }
         }
@@ -123,7 +124,7 @@ class AuctionStore(private val ds: DataSource) {
         endsAt: Long, now: Long, outbid: Claim?, payment: UUID,
     ): Boolean = tx { c ->
         val changed = c.prepareStatement(
-            "UPDATE auc_listings SET current_bid = ?, current_bidder = ?, bid_count = bid_count + 1, ends_at = ?, " +
+            "UPDATE ${prefix}listings SET current_bid = ?, current_bidder = ?, bid_count = bid_count + 1, ends_at = ?, " +
                 "row_version = row_version + 1 WHERE id = ? AND status = 'active' AND row_version = ?",
         ).use { s ->
             s.setAmount(1, amount); s.setString(2, bidder.toString()); s.setLong(3, endsAt)
@@ -131,11 +132,11 @@ class AuctionStore(private val ds: DataSource) {
             s.executeUpdate()
         }
         if (changed != 1) return@tx false
-        c.prepareStatement("UPDATE auc_bids SET state = 'refunded' WHERE listing_id = ? AND state = 'held'").use { s ->
+        c.prepareStatement("UPDATE ${prefix}bids SET state = 'refunded' WHERE listing_id = ? AND state = 'held'").use { s ->
             s.setString(1, id.toString()); s.executeUpdate()
         }
         c.prepareStatement(
-            "INSERT INTO auc_bids (id, listing_id, bidder_uuid, currency, amount, state, created_at) VALUES (?, ?, ?, ?, ?, 'held', ?)",
+            "INSERT INTO ${prefix}bids (id, listing_id, bidder_uuid, currency, amount, state, created_at) VALUES (?, ?, ?, ?, ?, 'held', ?)",
         ).use { s ->
             s.setString(1, bidId.toString()); s.setString(2, id.toString()); s.setString(3, bidder.toString())
             s.setString(4, currency); s.setAmount(5, amount); s.setLong(6, now)
@@ -148,7 +149,7 @@ class AuctionStore(private val ds: DataSource) {
 
     /** Bids of a listing, newest first. */
     fun bids(listing: UUID): List<Triple<UUID, BigDecimal, String>> = read { c ->
-        c.prepareStatement("SELECT bidder_uuid, amount, state FROM auc_bids WHERE listing_id = ? ORDER BY created_at DESC").use { s ->
+        c.prepareStatement("SELECT bidder_uuid, amount, state FROM ${prefix}bids WHERE listing_id = ? ORDER BY created_at DESC").use { s ->
             s.setString(1, listing.toString())
             s.executeQuery().use { rs ->
                 buildList { while (rs.next()) add(Triple(UUID.fromString(rs.getString(1)), rs.getBigDecimal(2), rs.getString(3))) }
@@ -160,27 +161,27 @@ class AuctionStore(private val ds: DataSource) {
 
     /** Source ids of [source] already imported. */
     fun importedIds(source: String): Set<String> = read { c ->
-        c.prepareStatement("SELECT source_id FROM auc_import_map WHERE source = ?").use { s ->
+        c.prepareStatement("SELECT source_id FROM ${prefix}import_map WHERE source = ?").use { s ->
             s.setString(1, source)
             s.executeQuery().use { rs -> buildSet { while (rs.next()) add(rs.getString(1)) } }
         }
     }
 
     /**
-     * Writes one imported record and its `auc_import_map` row in one transaction.
+     * Writes one imported record and its `{prefix}import_map` row in one transaction.
      * False when [sourceId] was already imported: replaying an import skips it.
      */
     fun importRecord(
         source: String, sourceId: String, target: UUID, now: Long,
         listing: Listing? = null, claims: List<Claim> = emptyList(), sales: List<Sale> = emptyList(),
     ): Boolean = tx { c ->
-        val fresh = c.prepareStatement("SELECT 1 FROM auc_import_map WHERE source = ? AND source_id = ?").use { s ->
+        val fresh = c.prepareStatement("SELECT 1 FROM ${prefix}import_map WHERE source = ? AND source_id = ?").use { s ->
             s.setString(1, source); s.setString(2, sourceId)
             s.executeQuery().use { rs -> !rs.next() }
         }
         if (!fresh) return@tx false
         // The primary key makes a concurrent replay fail here rather than write twice.
-        c.prepareStatement("INSERT INTO auc_import_map (source, source_id, target_id, imported_at) VALUES (?, ?, ?, ?)").use { s ->
+        c.prepareStatement("INSERT INTO ${prefix}import_map (source, source_id, target_id, imported_at) VALUES (?, ?, ?, ?)").use { s ->
             s.setString(1, source); s.setString(2, sourceId); s.setString(3, target.toString()); s.setLong(4, now)
             s.executeUpdate()
         }
@@ -194,7 +195,7 @@ class AuctionStore(private val ds: DataSource) {
 
     /** A page of this server's listings (any status) with their items, by id, after [afterId]. */
     fun listingsPage(server: String, afterId: String, limit: Int): List<Listing> = read { c ->
-        val rows = c.prepareStatement("SELECT * FROM auc_listings WHERE server = ? AND id > ? ORDER BY id LIMIT ?").use { s ->
+        val rows = c.prepareStatement("SELECT * FROM ${prefix}listings WHERE server = ? AND id > ? ORDER BY id LIMIT ?").use { s ->
             s.setString(1, server); s.setString(2, afterId); s.setInt(3, limit)
             s.executeQuery().use { rs -> buildList { while (rs.next()) add(listingRow(rs)) } }
         }
@@ -203,14 +204,14 @@ class AuctionStore(private val ds: DataSource) {
 
     /** New keys of a listing's items and, when they all agree, of its sale rows. */
     fun updatePriceKeys(listing: UUID, keys: Map<Int, String>, saleKey: String?) = tx { c ->
-        c.prepareStatement("UPDATE auc_listing_items SET price_key = ? WHERE listing_id = ? AND slot_index = ?").use { s ->
+        c.prepareStatement("UPDATE ${prefix}listing_items SET price_key = ? WHERE listing_id = ? AND slot_index = ?").use { s ->
             for ((slot, key) in keys) {
                 s.setString(1, key); s.setString(2, listing.toString()); s.setInt(3, slot); s.addBatch()
             }
             s.executeBatch()
         }
         if (saleKey != null) {
-            c.prepareStatement("UPDATE auc_sales SET price_key = ? WHERE listing_id = ?").use { s ->
+            c.prepareStatement("UPDATE ${prefix}sales SET price_key = ? WHERE listing_id = ?").use { s ->
                 s.setString(1, saleKey); s.setString(2, listing.toString()); s.executeUpdate()
             }
         }
@@ -222,7 +223,7 @@ class AuctionStore(private val ds: DataSource) {
 
     fun unclaimed(server: String, owner: UUID): List<Claim> = read { c ->
         c.prepareStatement(
-            "SELECT * FROM auc_claims WHERE server = ? AND owner_uuid = ? AND claimed_at IS NULL ORDER BY created_at",
+            "SELECT * FROM ${prefix}claims WHERE server = ? AND owner_uuid = ? AND claimed_at IS NULL ORDER BY created_at",
         ).use { s ->
             s.setString(1, server); s.setString(2, owner.toString())
             s.executeQuery().use { rs -> buildList { while (rs.next()) add(claimRow(rs)) } }
@@ -230,7 +231,7 @@ class AuctionStore(private val ds: DataSource) {
     }
 
     fun claim(id: UUID): Claim? = read { c ->
-        c.prepareStatement("SELECT * FROM auc_claims WHERE id = ? AND claimed_at IS NULL").use { s ->
+        c.prepareStatement("SELECT * FROM ${prefix}claims WHERE id = ? AND claimed_at IS NULL").use { s ->
             s.setString(1, id.toString())
             s.executeQuery().use { rs -> if (rs.next()) claimRow(rs) else null }
         }
@@ -238,28 +239,28 @@ class AuctionStore(private val ds: DataSource) {
 
     /** True for the one caller that takes the claim. */
     fun markClaimed(id: UUID, now: Long): Boolean = tx { c ->
-        c.prepareStatement("UPDATE auc_claims SET claimed_at = ? WHERE id = ? AND claimed_at IS NULL").use { s ->
+        c.prepareStatement("UPDATE ${prefix}claims SET claimed_at = ? WHERE id = ? AND claimed_at IS NULL").use { s ->
             s.setLong(1, now); s.setString(2, id.toString()); s.executeUpdate() == 1
         }
     }
 
     /** Puts back a claim whose delivery failed (full inventory, refused deposit). */
     fun reopenClaim(id: UUID) = tx { c ->
-        c.prepareStatement("UPDATE auc_claims SET claimed_at = NULL WHERE id = ?").use { s ->
+        c.prepareStatement("UPDATE ${prefix}claims SET claimed_at = NULL WHERE id = ?").use { s ->
             s.setString(1, id.toString()); s.executeUpdate()
         }
     }
 
     /** Unclaimed claims created before [before]; [delete] removes them. */
     fun staleClaims(server: String, before: Long): List<Claim> = read { c ->
-        c.prepareStatement("SELECT * FROM auc_claims WHERE server = ? AND claimed_at IS NULL AND created_at < ?").use { s ->
+        c.prepareStatement("SELECT * FROM ${prefix}claims WHERE server = ? AND claimed_at IS NULL AND created_at < ?").use { s ->
             s.setString(1, server); s.setLong(2, before)
             s.executeQuery().use { rs -> buildList { while (rs.next()) add(claimRow(rs)) } }
         }
     }
 
     fun deleteClaim(id: UUID) = tx { c ->
-        c.prepareStatement("DELETE FROM auc_claims WHERE id = ? AND claimed_at IS NULL").use { s ->
+        c.prepareStatement("DELETE FROM ${prefix}claims WHERE id = ? AND claimed_at IS NULL").use { s ->
             s.setString(1, id.toString()); s.executeUpdate()
         }
     }
@@ -268,7 +269,7 @@ class AuctionStore(private val ds: DataSource) {
 
     fun insertPayment(p: Payment) = tx { c ->
         c.prepareStatement(
-            "INSERT INTO auc_payments (id, server, player_uuid, listing_id, currency, amount, purpose, state, created_at) " +
+            "INSERT INTO ${prefix}payments (id, server, player_uuid, listing_id, currency, amount, purpose, state, created_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         ).use { s ->
             s.setString(1, p.id.toString()); s.setString(2, p.server); s.setString(3, p.player.toString())
@@ -280,7 +281,7 @@ class AuctionStore(private val ds: DataSource) {
 
     /** The charge never happened (refused by the economy): forget the intent. */
     fun deletePayment(id: UUID) = tx { c ->
-        c.prepareStatement("DELETE FROM auc_payments WHERE id = ? AND state = 'pending'").use { s ->
+        c.prepareStatement("DELETE FROM ${prefix}payments WHERE id = ? AND state = 'pending'").use { s ->
             s.setString(1, id.toString()); s.executeUpdate()
         }
     }
@@ -293,7 +294,7 @@ class AuctionStore(private val ds: DataSource) {
     }
 
     fun pendingPayments(server: String): List<Payment> = read { c ->
-        c.prepareStatement("SELECT * FROM auc_payments WHERE server = ? AND state = 'pending'").use { s ->
+        c.prepareStatement("SELECT * FROM ${prefix}payments WHERE server = ? AND state = 'pending'").use { s ->
             s.setString(1, server)
             s.executeQuery().use { rs ->
                 buildList {
@@ -315,7 +316,7 @@ class AuctionStore(private val ds: DataSource) {
     fun recentSales(priceKey: String, currency: String, since: Long, limit: Int, types: Set<String>): List<Pair<UUID, BigDecimal>> =
         read { c ->
             c.prepareStatement(
-                "SELECT seller_uuid, unit_price, listing_type FROM auc_sales WHERE price_key = ? AND currency = ? AND sold_at >= ? " +
+                "SELECT seller_uuid, unit_price, listing_type FROM ${prefix}sales WHERE price_key = ? AND currency = ? AND sold_at >= ? " +
                     "ORDER BY sold_at DESC",
             ).use { s ->
                 s.setString(1, priceKey); s.setString(2, currency); s.setLong(3, since)
@@ -359,7 +360,7 @@ class AuctionStore(private val ds: DataSource) {
         // Chunked IN lists: H2 and MySQL both cap the statement size.
         for (chunk in listings.chunked(500)) {
             val marks = chunk.joinToString(",") { "?" }
-            c.prepareStatement("SELECT * FROM auc_listing_items WHERE listing_id IN ($marks)").use { s ->
+            c.prepareStatement("SELECT * FROM ${prefix}listing_items WHERE listing_id IN ($marks)").use { s ->
                 chunk.forEachIndexed { i, l -> s.setString(i + 1, l.id.toString()) }
                 s.executeQuery().use { rs ->
                     while (rs.next()) {
@@ -393,7 +394,7 @@ class AuctionStore(private val ds: DataSource) {
     private fun insertClaims(c: Connection, claims: List<Claim>) {
         if (claims.isEmpty()) return
         c.prepareStatement(
-            "INSERT INTO auc_claims (id, server, owner_uuid, claim_kind, item_blob, currency, amount, reason, listing_id, created_at) " +
+            "INSERT INTO ${prefix}claims (id, server, owner_uuid, claim_kind, item_blob, currency, amount, reason, listing_id, created_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         ).use { s ->
             for (cl in claims) {
@@ -410,7 +411,7 @@ class AuctionStore(private val ds: DataSource) {
     private fun insertSales(c: Connection, sales: List<Sale>) {
         if (sales.isEmpty()) return
         c.prepareStatement(
-            "INSERT INTO auc_sales (id, listing_id, server, listing_type, price_key, currency, quantity, total, unit_price, " +
+            "INSERT INTO ${prefix}sales (id, listing_id, server, listing_type, price_key, currency, quantity, total, unit_price, " +
                 "seller_uuid, buyer_uuid, sold_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         ).use { s ->
             for (sale in sales) {
@@ -425,7 +426,7 @@ class AuctionStore(private val ds: DataSource) {
     }
 
     private fun setPaymentState(c: Connection, id: UUID, state: PaymentState): Boolean =
-        c.prepareStatement("UPDATE auc_payments SET state = ? WHERE id = ? AND state = 'pending'").use { s ->
+        c.prepareStatement("UPDATE ${prefix}payments SET state = ? WHERE id = ? AND state = 'pending'").use { s ->
             s.setString(1, state.id); s.setString(2, id.toString()); s.executeUpdate() == 1
         }
 
