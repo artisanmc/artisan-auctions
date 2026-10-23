@@ -64,9 +64,7 @@ class AuctionsPlugin : JavaPlugin() {
         val house = AuctionHouse(this, api, serverId, AuctionStore(dataSource, tablePrefix), currencies) { configStore.current }
         this.house = house
         val admin = AdminCommands(house, Imports(this, house, currencies))
-        api.modules.register(AuctionsModule(configStore, currencies, logger) { house })
-        // Outside the module's onEnable: owned by this plugin, removed when it disables.
-        api.playerCommands.register(AhCommand.declaration(house, admin))
+        api.modules.register(AuctionsModule(configStore, currencies, logger, { house }) { AhCommand.declaration(house, admin) })
         server.servicesManager.register(AuctionsService::class.java, AuctionsServiceImpl(configStore, house), this, ServicePriority.Normal)
 
         server.pluginManager.registerEvents(PlayerListener(house), this)

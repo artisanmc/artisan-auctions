@@ -8,6 +8,7 @@ import net.artisanmc.auctions.paper.ModuleBindings
 import net.artisanmc.auctions.sources.SettingsSource
 import net.artisanmc.modules.api.ArtisanAPI
 import net.artisanmc.modules.api.ArtisanModule
+import net.artisanmc.modules.api.playercommand.PlayerCommandDeclaration
 import java.util.logging.Logger
 
 /**
@@ -20,6 +21,8 @@ class AuctionsModule(
     private val currencies: Currencies,
     private val logger: Logger,
     private val house: (ArtisanAPI) -> AuctionHouse,
+    /** `/ah` and its sub-commands. */
+    private val ahCommand: () -> PlayerCommandDeclaration,
 ) : ArtisanModule {
     override fun getId(): String = ID
     override fun getSchemaVersion(): String = "auctions/v1"
@@ -33,6 +36,9 @@ class AuctionsModule(
         api.dataSources.register(SettingsSource.declaration { config.current })
         loadConfig(api)
         ModuleBindings.declare(api, house(api))
+        // Here, not in the plugin's onEnable: `/ah` belongs to this module, its folder holds its
+        // file, and disabling the module removes it.
+        api.playerCommands.register(ahCommand())
     }
 
     /** After each sync from the editor and `/artisan reload`. */

@@ -31,8 +31,9 @@ timed auctions, or both. Menus, dialogs and texts are files of the module's fold
 - **Several servers on one database.** Each server keeps its own house, tagged by
   `server-id` in `plugins/ArtisanAuctions/config.yml`.
 
-`/ah` is declared to Artisan (`auctions:ah`): rename it, add aliases, a cooldown or conditions
-with a `command_override/v1` file in `overrides/command/` of the module's folder.
+`/ah` is declared by the auctions module (`auctions:ah`), so it belongs to the module's folder:
+rename it, add aliases, a cooldown or conditions from that folder in the editor, or with its
+`command_override/v1` file in `overrides/command/`. Turning the module off removes the command.
 
 | Command | Permission |
 |---|---|
