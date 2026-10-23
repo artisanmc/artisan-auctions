@@ -16,9 +16,9 @@ import org.bukkit.event.player.PlayerQuitEvent
 
 /**
  * `/ah` and its subcommands, declared to Artisan: it parses, completes and checks the
- * permission; the admin may rename `/ah`, add aliases, a cooldown or conditions with a
- * `command_override/v1` file targeting [ID]. Everything a player can do here is also
- * reachable from the menus.
+ * permission. Artisan writes it as `commands/ah.yaml` of the module's folder, whose actions call
+ * [ID] (`module_command`): the admin renames `/ah`, adds aliases, a cooldown or conditions there.
+ * Everything a player can do here is also reachable from the menus.
  */
 object AhCommand {
     const val ID = "auctions:ah"
