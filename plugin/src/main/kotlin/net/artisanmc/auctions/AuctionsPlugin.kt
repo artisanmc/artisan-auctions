@@ -11,7 +11,7 @@ import net.artisanmc.auctions.paper.AuctionHouse
 import net.artisanmc.auctions.paper.Currencies
 import net.artisanmc.auctions.paper.Imports
 import net.artisanmc.auctions.paper.PlayerListener
-import net.artisanmc.auctions.files.DefaultFiles
+import net.artisanmc.auctions.files.ModuleFiles
 import net.artisanmc.modules.api.ArtisanAPI
 import org.bukkit.plugin.ServicePriority
 import org.bukkit.plugin.java.JavaPlugin
@@ -51,11 +51,12 @@ class AuctionsPlugin : JavaPlugin() {
         }
 
         // plugins/Artisan/modules/auctions/: menus, dialogs, texts and settings, edited in the editor.
+        // Claimed before the module registers its files there (AuctionsModule.onEnable).
         val legacy = File(dataFolder, AuctionsModule.LEGACY_DIR).takeIf { it.isDirectory }
         val folder = api.projectRoots.moduleFolder(AuctionsModule.FOLDER, AuctionsModule.ID, legacy)
-        if (DefaultFiles(::getResource).writeIfEmpty(folder)) {
+        if (ModuleFiles.writeModuleFile(folder)) {
             api.project.reload()
-            logger.info("Default auction house files written to ${folder.path}")
+            logger.info("Module file written to ${folder.path}")
         }
 
         val currencies = Currencies(server.servicesManager)
@@ -95,8 +96,11 @@ class AuctionsPlugin : JavaPlugin() {
     }
 
     companion object {
-        /** First API with `database.tablePrefix`; module folders since 2.8.0, player commands since 2.7.0. */
-        const val MIN_CORE_API = "2.9.0"
+        /**
+         * `project.read` of either YAML extension (2.15.0); system templates since 2.12.0, table
+         * prefix since 2.9.0, module folders since 2.8.0, player commands since 2.7.0.
+         */
+        const val MIN_CORE_API = "2.15.0"
         /** Ends due listings every 5 s. */
         const val EXPIRY_TICKS = 100L
         /** Purges claims past their retention every hour. */

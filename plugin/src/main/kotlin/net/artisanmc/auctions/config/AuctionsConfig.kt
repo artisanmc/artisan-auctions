@@ -6,7 +6,7 @@ import java.time.Duration
 /**
  * `data/config.yaml` of the module's folder, edited by the "Settings" config
  * screen (model `auctions:config`). Every key is optional: a missing one takes
- * the default below, which is also what the bootstrap file contains.
+ * the default below, which is also what the shipped file contains.
  */
 data class AuctionsConfig(
     val sales: Sales = Sales(),

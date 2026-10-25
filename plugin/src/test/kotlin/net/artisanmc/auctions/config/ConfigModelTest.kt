@@ -29,8 +29,8 @@ class ConfigModelTest {
         if (v is Map<*, *> && name !in leaves) fileKeys(v, leaves, "$name.") else listOf(name)
     }.toSet()
 
-    @Test fun `every key of the bootstrap config is in the model and back`() {
-        val file = Yaml().load<Map<*, *>>(javaClass.getResource("/bootstrap/data/config.yaml")!!.readText())
+    @Test fun `every key of the shipped config is in the model and back`() {
+        val file = Yaml().load<Map<*, *>>(javaClass.getResource("/module/data/config.yaml")!!.readText())
         val doc = ConfigModel.document()
         val fields = doc["fields"] as List<*>
         assertEquals(fileKeys(file, mapKeys(fields)), modelKeys(fields))

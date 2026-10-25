@@ -1,5 +1,0 @@
-schema: manifest/v1
-name: Auctions
-default_lang: en
-languages: [en, fr]
-lore_max_width: 240
