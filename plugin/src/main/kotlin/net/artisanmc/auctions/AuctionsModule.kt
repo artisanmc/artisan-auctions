@@ -9,6 +9,7 @@ import net.artisanmc.auctions.paper.ModuleBindings
 import net.artisanmc.auctions.sources.SettingsSource
 import net.artisanmc.modules.api.ArtisanAPI
 import net.artisanmc.modules.api.ArtisanModule
+import net.artisanmc.modules.api.playercommand.PlayerCommandDeclaration
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -21,6 +22,7 @@ class AuctionsModule(
     private val config: ConfigStore,
     private val currencies: Currencies,
     private val logger: Logger,
+    private val ahCommand: () -> PlayerCommandDeclaration,
     private val house: (ArtisanAPI) -> AuctionHouse,
 ) : ArtisanModule {
     override fun getId(): String = ID
@@ -36,6 +38,10 @@ class AuctionsModule(
         api.dataSources.register(SettingsSource.declaration { config.current })
         loadConfig(api)
         ModuleBindings.declare(api, house(api))
+        // Declared here, so owned by the module: Artisan then knows `commands/ah.yml` of the
+        // folder is this command's file and registers `/ah` from it alone. Declared outside a
+        // module, the command had no owner and was registered a second time, refused as taken.
+        api.playerCommands.register(ahCommand())
     }
 
     /** After each sync from the editor and `/artisan reload`. */
