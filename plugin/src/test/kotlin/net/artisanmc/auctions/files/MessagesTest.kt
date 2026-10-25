@@ -7,7 +7,7 @@ import kotlin.test.*
 /** Every message the code sends exists in each language of the default files. */
 class MessagesTest {
     private fun messages(lang: String): Set<String> {
-        val tree = Yaml().load<Map<String, Any?>>(javaClass.getResource("/bootstrap/lang/$lang.yaml")!!.readText())
+        val tree = Yaml().load<Map<String, Any?>>(javaClass.getResource("/module/lang/$lang.yaml")!!.readText())
         @Suppress("UNCHECKED_CAST")
         return ((tree["auctions"] as Map<String, Any?>)["messages"] as Map<String, Any?>).keys
     }

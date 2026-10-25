@@ -8,8 +8,8 @@ import kotlin.test.*
 class ConfigParserTest {
     private fun parse(yaml: String) = ConfigParser.parse(Yaml().load<Map<String, Any?>>(yaml) ?: emptyMap<String, Any?>())
 
-    @Test fun `the bootstrap file reads without errors and equals the defaults`() {
-        val text = javaClass.getResource("/bootstrap/data/config.yaml")!!.readText()
+    @Test fun `the shipped file reads without errors and equals the defaults`() {
+        val text = javaClass.getResource("/module/data/config.yaml")!!.readText()
         val result = parse(text)
         assertEquals(emptyList(), result.errors)
         // Regex has identity equality: compare the rest.
