@@ -96,17 +96,20 @@ Inside the plugin, Bukkit stays at the edge so the rules are tested without a se
   `auctions_`), in the suite's shared database (`api.database`).
 - `paper/`: the Paper side: item serialization, currencies, events, menu repaints, `/ah`,
   data sources and module commands.
-- `src/main/resources/bootstrap/`: the default files, written once to the module's folder
-  `plugins/Artisan/modules/auctions/` when it is empty (files left in
-  `plugins/ArtisanAuctions/editor/` by an earlier version are moved there once). List new files in `bootstrap.index`.
+- `src/main/resources/module/`: the menus, dialogs, texts and settings of the module's folder
+  `plugins/Artisan/modules/auctions/`, a system template Artisan keeps there (`files/ModuleFiles`):
+  a missing file is written again, an untouched one follows each new version, an edited one
+  stays the admin's until Reset. List a new file in `ModuleFiles.PATHS` and raise
+  `ModuleFiles.VERSION` when one changes. Files left in `plugins/ArtisanAuctions/editor/` by an
+  earlier version are moved to the folder once.
 
 ## Build
 
-Requires Artisan 2 with the API 2.9.0 (table prefix, module folders, player commands). Paper only: the
+Requires Artisan 2 with the API 2.15.0 (files read under either YAML extension, system templates, table prefix, module folders, player commands). Paper only: the
 plugin is not marked for Folia. Until the API is released:
 
 ```bash
-cd ../artisan/plugin && ./gradlew :api:publishToMavenLocal -PapiVersion=2.9.0
+cd ../artisan/plugin && ./gradlew :artisan-api:publishToMavenLocal -PapiVersion=2.17.0
 cd ../../artisan-auctions && ./gradlew build   # → plugin/build/libs/ArtisanAuctions-<version>.jar
 ```
 
