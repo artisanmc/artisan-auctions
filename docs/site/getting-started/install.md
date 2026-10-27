@@ -20,11 +20,12 @@ On first start the plugin creates two folders:
 
 | Folder | Content | Edited from |
 |---|---|---|
-| `plugins/Artisan/modules/auctions/` | Rules (`data/config.yaml`), menus, dialogs, texts (`lang/`) | The Artisan editor |
+| `plugins/Artisan/modules/auctions/` | Rules (`data/config.yml`), menus, dialogs, texts (`lang/`) | The Artisan editor |
 | `plugins/ArtisanAuctions/` | `config.yml`: this server's id in a shared database | A text editor |
 
-The default files are written once, when the module's folder is empty. A file you delete is not
-written again.
+Artisan keeps the module's menus, dialogs, texts and settings in that folder: a file you delete
+is written again on the next start, a file you never edited follows each new version of the
+plugin, and a file you edited stays yours until you reset it in the editor.
 
 ## 3. Open the house
 

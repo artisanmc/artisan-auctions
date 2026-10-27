@@ -1,5 +1,6 @@
 package net.artisanmc.auctions.paper
 
+import net.artisanmc.auctions.AuctionsModule
 import net.artisanmc.auctions.api.ListingType
 import net.artisanmc.modules.api.playercommand.CommandArgument
 import net.artisanmc.modules.api.playercommand.PlayerCommandContext
@@ -16,9 +17,11 @@ import org.bukkit.event.player.PlayerQuitEvent
 
 /**
  * `/ah` and its subcommands, declared to Artisan: it parses, completes and checks the
- * permission. Artisan writes it as `commands/ah.yaml` of the module's folder, whose actions call
- * [ID] (`module_command`): the admin renames `/ah`, adds aliases, a cooldown or conditions there.
- * Everything a player can do here is also reachable from the menus.
+ * permission. Artisan writes it as `commands/ah.yml` of the module's folder: the admin renames
+ * `/ah`, adds aliases, a cooldown or conditions there. Everything a player can do here is also
+ * reachable from the menus. `/ah`, `/ah mine` and `/ah claim` only open a menu: declared with
+ * `opensMenu`, their file says `open_menu` and the editor draws the link; the others call their
+ * code ([ID] and its children, `module_command`).
  */
 object AhCommand {
     const val ID = "auctions:ah"
@@ -29,7 +32,7 @@ object AhCommand {
             .aliases("auctionhouse", "hdv")
             .permission(AuctionHouse.PERM_USE)
             .description(mapOf("en" to "Open the auction house", "fr" to "Ouvrir l'hôtel des ventes"))
-            .executor(player { p, _ -> house.open(p) })
+            .opensMenu(menu(AuctionHouse.MENU_MAIN))
             .child(sub("sell", AuctionHouse.PERM_SELL)
                 .argument(CommandArgument.string("price").optional())
                 .argument(CommandArgument.string("currency").optional())
@@ -57,10 +60,16 @@ object AhCommand {
                     house.open(p, AuctionHouse.MENU_MAIN, mapOf("search" to text))
                 })
                 .build())
-            .child(sub("mine", AuctionHouse.PERM_USE).executor(player { p, _ -> house.open(p, AuctionHouse.MENU_MINE) }).build())
-            .child(sub("claim", AuctionHouse.PERM_USE).executor(player { p, _ -> house.open(p, AuctionHouse.MENU_CLAIMS) }).build())
+            .child(sub("mine", AuctionHouse.PERM_USE).opensMenu(menu(AuctionHouse.MENU_MINE)).build())
+            .child(sub("claim", AuctionHouse.PERM_USE).opensMenu(menu(AuctionHouse.MENU_CLAIMS)).build())
             .child(admin.declaration())
             .build()
+
+    /**
+     * A menu of the module's folder, qualified: Artisan opens it and the editor links the
+     * command (or its sub-command's row) to it on the board.
+     */
+    private fun menu(id: String) = "${AuctionsModule.FOLDER}:$id"
 
     private fun sub(name: String, permission: String) =
         PlayerCommandDeclaration.builder("auctions:$name").name(name).permission(permission)

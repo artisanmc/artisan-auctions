@@ -2,6 +2,7 @@ package net.artisanmc.auctions
 
 import net.artisanmc.auctions.config.ConfigModel
 import net.artisanmc.auctions.config.ConfigStore
+import net.artisanmc.auctions.files.ModuleFiles
 import net.artisanmc.auctions.paper.AuctionHouse
 import net.artisanmc.auctions.paper.Currencies
 import net.artisanmc.auctions.paper.ModuleBindings
@@ -9,11 +10,12 @@ import net.artisanmc.auctions.sources.SettingsSource
 import net.artisanmc.modules.api.ArtisanAPI
 import net.artisanmc.modules.api.ArtisanModule
 import net.artisanmc.modules.api.playercommand.PlayerCommandDeclaration
+import java.util.logging.Level
 import java.util.logging.Logger
 
 /**
  * The add-on as Artisan sees it. Everything the editor shows (model, screen,
- * data sources, commands) is declared in [onEnable]: Artisan attributes what is
+ * data sources, commands, the folder's files) is declared in [onEnable]: Artisan attributes what is
  * declared there to this module.
  */
 class AuctionsModule(
@@ -31,6 +33,7 @@ class AuctionsModule(
 
     override fun onEnable(api: ArtisanAPI) {
         this.api = api
+        registerFiles(api)
         api.models.declare(ConfigModel.declaration())
         api.screens.declare(SETTINGS_SCREEN, "Settings", CONFIG_PATH.removeSuffix(".yaml"), FOLDER)
         api.dataSources.register(SettingsSource.declaration { config.current })
@@ -48,6 +51,18 @@ class AuctionsModule(
 
     override fun onDisable() {
         api = null
+    }
+
+    /**
+     * Artisan writes the missing ones off the game thread, after this start has read the config:
+     * a first start runs on the defaults, which are what the shipped `data/config.yaml` holds.
+     */
+    private fun registerFiles(api: ArtisanAPI) {
+        try {
+            api.templates.register(ModuleFiles.template(javaClass.classLoader))
+        } catch (e: RuntimeException) {
+            logger.log(Level.WARNING, "[Auctions] the house's menus, dialogs and texts are not available", e)
+        }
     }
 
     private fun loadConfig(api: ArtisanAPI) {
