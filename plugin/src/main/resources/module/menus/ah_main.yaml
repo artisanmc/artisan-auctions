@@ -28,20 +28,23 @@ elements:
   #    shown only when both kinds are enabled ──
   - id: filter
     positions: 3
-    material: NETHER_STAR
-    title: { en: "<yellow>Show: <white>All listings", fr: "<yellow>Afficher : <white>Toutes les annonces" }
+    material: "{tab == \"all\" ? \"NETHER_STAR\" : \"\"}{tab == \"sale\" ? \"EMERALD\" : \"\"}{tab == \"auction\" ? \"GOLDEN_AXE\" : \"\"}"
+    hide: [attributes]
+    title:
+      en: "<yellow>Show: <white>{tab == \"all\" ? \"All listings\" : \"\"}{tab == \"sale\" ? \"Fixed price\" : \"\"}{tab == \"auction\" ? \"Auctions\" : \"\"}"
+      fr: "<yellow>Afficher : <white>{tab == \"all\" ? \"Toutes les annonces\" : \"\"}{tab == \"sale\" ? \"Prix fixe\" : \"\"}{tab == \"auction\" ? \"Enchères\" : \"\"}"
     lore:
       en:
-        - "<green>▸ All listings"
-        - "<gray>  Fixed price"
-        - "<gray>  Auctions"
+        - "{tab == \"all\" ? \"<green>▸ \" : \"<gray>  \"}All listings"
+        - "{tab == \"sale\" ? \"<green>▸ \" : \"<gray>  \"}Fixed price"
+        - "{tab == \"auction\" ? \"<green>▸ \" : \"<gray>  \"}Auctions"
         - ""
         - "<gray>Left-click: next filter"
         - "<gray>Right-click: previous filter"
       fr:
-        - "<green>▸ Toutes les annonces"
-        - "<gray>  Prix fixe"
-        - "<gray>  Enchères"
+        - "{tab == \"all\" ? \"<green>▸ \" : \"<gray>  \"}Toutes les annonces"
+        - "{tab == \"sale\" ? \"<green>▸ \" : \"<gray>  \"}Prix fixe"
+        - "{tab == \"auction\" ? \"<green>▸ \" : \"<gray>  \"}Enchères"
         - ""
         - "<gray>Clic gauche : filtre suivant"
         - "<gray>Clic droit : filtre précédent"
@@ -53,49 +56,6 @@ elements:
       - if: [ { not: { expression: "settings[0].both" } } ]
         material: GRAY_STAINED_GLASS_PANE
         title: " "
-      - if: [ { expression: "tab == \"sale\"" } ]
-        material: EMERALD
-        title: { en: "<yellow>Show: <white>Fixed price", fr: "<yellow>Afficher : <white>Prix fixe" }
-        lore:
-          en:
-            - "<gray>  All listings"
-            - "<green>▸ Fixed price"
-            - "<gray>  Auctions"
-            - ""
-            - "<gray>Left-click: next filter"
-            - "<gray>Right-click: previous filter"
-          fr:
-            - "<gray>  Toutes les annonces"
-            - "<green>▸ Prix fixe"
-            - "<gray>  Enchères"
-            - ""
-            - "<gray>Clic gauche : filtre suivant"
-            - "<gray>Clic droit : filtre précédent"
-        click:
-          left: [ { set_arg_cycle_next: { arg: tab, list: "all,sale,auction" } } ]
-          right: [ { set_arg_cycle_prev: { arg: tab, list: "all,sale,auction" } } ]
-      - if: [ { expression: "tab == \"auction\"" } ]
-        material: GOLDEN_AXE
-        hide: [attributes]
-        title: { en: "<yellow>Show: <white>Auctions", fr: "<yellow>Afficher : <white>Enchères" }
-        lore:
-          en:
-            - "<gray>  All listings"
-            - "<gray>  Fixed price"
-            - "<green>▸ Auctions"
-            - ""
-            - "<gray>Left-click: next filter"
-            - "<gray>Right-click: previous filter"
-          fr:
-            - "<gray>  Toutes les annonces"
-            - "<gray>  Prix fixe"
-            - "<green>▸ Enchères"
-            - ""
-            - "<gray>Clic gauche : filtre suivant"
-            - "<gray>Clic droit : filtre précédent"
-        click:
-          left: [ { set_arg_cycle_next: { arg: tab, list: "all,sale,auction" } } ]
-          right: [ { set_arg_cycle_prev: { arg: tab, list: "all,sale,auction" } } ]
 
   - id: search
     positions: 5
