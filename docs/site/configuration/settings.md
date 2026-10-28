@@ -63,7 +63,7 @@ import:
 
 | Key | Default | Effect |
 |---|---|---|
-| `enabled` | `true` | Players can list at a fixed price. With `auctions.enabled` too, the menus show type tabs. Both off: the house is read-only, claims still work. |
+| `enabled` | `true` | Players can list at a fixed price. With `auctions.enabled` too, the main menu shows a filter button that turns through all listings, sales and auctions. Both off: the house is read-only, claims still work. |
 | `duration` | `48h` | Time before an unsold item goes back to the seller's claims. |
 | `min_price`, `max_price` | `1`, `1000000000` | Price range accepted. |
 

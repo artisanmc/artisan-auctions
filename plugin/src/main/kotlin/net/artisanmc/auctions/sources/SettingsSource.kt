@@ -10,7 +10,7 @@ import net.artisanmc.modules.api.datasource.Stability
 
 /**
  * `auctions:settings`: one row describing what the house allows right now.
- * The default menus hide their type tabs and pick their dialogs with it, so the
+ * The default menus hide their type filter and pick their dialogs with it, so the
  * same menus fit "sales only", "auctions only" and "both".
  */
 object SettingsSource {
@@ -39,7 +39,7 @@ object SettingsSource {
             DataSourceField("id", ModelFieldType.string(), "Always `settings`"),
             DataSourceField("sales_enabled", ModelFieldType.bool(), "Fixed-price sales can be created"),
             DataSourceField("auctions_enabled", ModelFieldType.bool(), "Auctions can be created"),
-            DataSourceField("both", ModelFieldType.bool(), "Both kinds are enabled: show the type tabs"),
+            DataSourceField("both", ModelFieldType.bool(), "Both kinds are enabled: show the type filter"),
             DataSourceField("read_only", ModelFieldType.bool(), "Nothing can be listed; claims still work"),
             DataSourceField("buyout", ModelFieldType.bool(), "Auctions may carry a buy-now price"),
             DataSourceField("currencies", ModelFieldType.list(ModelFieldType.string()), "Currency ids a listing may use"),

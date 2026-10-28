@@ -7,7 +7,7 @@ timed auctions, or both. Menus, dialogs and texts are files of the module's fold
 ## For server owners
 
 - **Kinds of listing.** `sales.enabled` and `auctions.enabled` in the **Settings** screen
-  (`data/config.yaml` of the module's folder). Both on: the menus show type tabs. Both off: the house
+  (`data/config.yaml` of the module's folder). Both on: the main menu shows a filter button (all, sales, auctions). Both off: the house
   is read-only and claims still work.
 - **Selling.** Hold the item, click *Sell* in `/ah` (or `/ah sell <price>`,
   `/ah auction <opening bid> [duration] [buy-now]`). The listing fee is kept, the sale tax is

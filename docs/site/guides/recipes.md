@@ -16,7 +16,7 @@ auctions:
   enabled: false
 ```
 
-The menus show no type tabs.
+The menus show no type filter.
 
 ## Auctions with a buy-now price and a 1-day maximum
 
