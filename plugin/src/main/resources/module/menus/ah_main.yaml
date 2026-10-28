@@ -20,55 +20,45 @@ inputs:
       params: { tab: "{tab}", sort: "{sort}", search: "{search}" }
 elements:
   - id: border
-    positions: "0,1,6,7,9,17,18,26,27,35,36,44,47,51"
+    positions: "0,1,2,4,6,7,9,17,18,26,27,35,36,44,47,51"
     material: GRAY_STAINED_GLASS_PANE
     title: " "
 
-  # ── Type tabs: only when both sales and auctions are enabled ──
-  - id: tab_all
-    positions: 2
-    material: GRAY_STAINED_GLASS_PANE
-    title: " "
-    states:
-      - if: [ { expression: "settings[0].both && tab == \"all\"" } ]
-        material: NETHER_STAR
-        enchanted: true
-        title: { en: "<green>All listings", fr: "<green>Toutes les annonces" }
-      - if: [ { expression: "settings[0].both" } ]
-        material: NETHER_STAR
-        title: { en: "<white>All listings", fr: "<white>Toutes les annonces" }
-        click: { left: [ { set_arg: { arg: tab, value: "all" } } ] }
-  - id: tab_sale
+  # ── Type filter: one button that turns through all / sales / auctions,
+  #    shown only when both kinds are enabled ──
+  - id: filter
     positions: 3
-    material: GRAY_STAINED_GLASS_PANE
-    title: " "
+    material: "{tab == \"all\" ? \"NETHER_STAR\" : \"\"}{tab == \"sale\" ? \"EMERALD\" : \"\"}{tab == \"auction\" ? \"GOLDEN_AXE\" : \"\"}"
+    hide: [attributes]
+    title:
+      en: "<yellow>Show: <white>{tab == \"all\" ? \"All listings\" : \"\"}{tab == \"sale\" ? \"Fixed price\" : \"\"}{tab == \"auction\" ? \"Auctions\" : \"\"}"
+      fr: "<yellow>Afficher : <white>{tab == \"all\" ? \"Toutes les annonces\" : \"\"}{tab == \"sale\" ? \"Prix fixe\" : \"\"}{tab == \"auction\" ? \"Enchères\" : \"\"}"
+    lore:
+      en:
+        - "{tab == \"all\" ? \"<green>▸ \" : \"<gray>  \"}All listings"
+        - "{tab == \"sale\" ? \"<green>▸ \" : \"<gray>  \"}Fixed price"
+        - "{tab == \"auction\" ? \"<green>▸ \" : \"<gray>  \"}Auctions"
+        - ""
+        - "<gray>Left-click: next filter"
+        - "<gray>Right-click: previous filter"
+      fr:
+        - "{tab == \"all\" ? \"<green>▸ \" : \"<gray>  \"}Toutes les annonces"
+        - "{tab == \"sale\" ? \"<green>▸ \" : \"<gray>  \"}Prix fixe"
+        - "{tab == \"auction\" ? \"<green>▸ \" : \"<gray>  \"}Enchères"
+        - ""
+        - "<gray>Clic gauche : filtre suivant"
+        - "<gray>Clic droit : filtre précédent"
+    click:
+      left: [ { set_arg_cycle_next: { arg: tab, list: "all,sale,auction" } } ]
+      right: [ { set_arg_cycle_prev: { arg: tab, list: "all,sale,auction" } } ]
     states:
-      - if: [ { expression: "settings[0].both && tab == \"sale\"" } ]
-        material: EMERALD
-        enchanted: true
-        title: { en: "<green>Fixed price", fr: "<green>Prix fixe" }
-      - if: [ { expression: "settings[0].both" } ]
-        material: EMERALD
-        title: { en: "<white>Fixed price", fr: "<white>Prix fixe" }
-        click: { left: [ { set_arg: { arg: tab, value: "sale" } } ] }
-  - id: tab_auction
-    positions: 5
-    material: GRAY_STAINED_GLASS_PANE
-    title: " "
-    states:
-      - if: [ { expression: "settings[0].both && tab == \"auction\"" } ]
-        material: GOLDEN_AXE
-        enchanted: true
-        hide: [attributes]
-        title: { en: "<green>Auctions", fr: "<green>Enchères" }
-      - if: [ { expression: "settings[0].both" } ]
-        material: GOLDEN_AXE
-        hide: [attributes]
-        title: { en: "<white>Auctions", fr: "<white>Enchères" }
-        click: { left: [ { set_arg: { arg: tab, value: "auction" } } ] }
+      # Only one kind is enabled: nothing to filter.
+      - if: [ { not: { expression: "settings[0].both" } } ]
+        material: GRAY_STAINED_GLASS_PANE
+        title: " "
 
   - id: search
-    positions: 4
+    positions: 5
     material: NAME_TAG
     title: { en: "<yellow>Search", fr: "<yellow>Rechercher" }
     lore:
@@ -159,6 +149,7 @@ elements:
     item: "{l.icon}"
     lore:
       en:
+        - "<green>Fixed price"
         - ""
         - "<gray>Price: <gold>{l.price_display}"
         - "<gray>Seller: <white>{l.seller}"
@@ -167,6 +158,7 @@ elements:
         - ""
         - "<yellow>Click to buy"
       fr:
+        - "<green>Prix fixe"
         - ""
         - "<gray>Prix : <gold>{l.price_display}"
         - "<gray>Vendeur : <white>{l.seller}"
@@ -184,16 +176,20 @@ elements:
         item: "{l.icon}"
         lore:
           en:
+            - "{l.is_auction ? \"<gold>Auction\" : \"<green>Fixed price\"}"
             - ""
-            - "<gray>Price: <gold>{l.price_display}"
+            - "<gray>{l.is_auction ? \"Opening bid\" : \"Price\"}: <gold>{l.is_auction ? l.start_price_display : l.price_display}"
+            - "{l.is_auction ? \"<gray>Bids: <white>\" : \"\"}{l.is_auction ? l.bid_count : \"\"}{l.has_bids ? \" <dark_gray>· <gray>best: <gold>\" : \"\"}{l.has_bids ? l.current_bid_display : \"\"}"
             - "<gray>Ends in: <white>{l.ends_at.until()}"
             - "{l.has_median ? \"<gray>Median: <white>\" : \"\"}{l.has_median ? l.median_display : \"\"}{l.has_median ? \" <gray>each (\" : \"\"}{l.has_median ? l.median_ratio_display : \"\"}{l.has_median ? \"<gray>)\" : \"\"}"
             - ""
             - "<aqua>Your listing"
             - "<red>Right-click to withdraw it"
           fr:
+            - "{l.is_auction ? \"<gold>Enchère\" : \"<green>Prix fixe\"}"
             - ""
-            - "<gray>Prix : <gold>{l.price_display}"
+            - "<gray>{l.is_auction ? \"Mise de départ\" : \"Prix\"} : <gold>{l.is_auction ? l.start_price_display : l.price_display}"
+            - "{l.is_auction ? \"<gray>Offres : <white>\" : \"\"}{l.is_auction ? l.bid_count : \"\"}{l.has_bids ? \" <dark_gray>· <gray>meilleure : <gold>\" : \"\"}{l.has_bids ? l.current_bid_display : \"\"}"
             - "<gray>Fin dans : <white>{l.ends_at.until()}"
             - "{l.has_median ? \"<gray>Médiane : <white>\" : \"\"}{l.has_median ? l.median_display : \"\"}{l.has_median ? \" <gray>l'unité (\" : \"\"}{l.has_median ? l.median_ratio_display : \"\"}{l.has_median ? \"<gray>)\" : \"\"}"
             - ""
@@ -208,6 +204,7 @@ elements:
         item: "{l.icon}"
         lore:
           en:
+            - "<gold>Auction"
             - ""
             - "<gray>Opening bid: <gold>{l.start_price_display}"
             - "<gray>Bids: <white>{l.bid_count} <dark_gray>· <gray>best: <gold>{l.has_bids ? l.current_bid_display : \"-\"}"
@@ -219,6 +216,7 @@ elements:
             - "{l.leading ? \"<green>You hold the best bid\" : \"<yellow>Click to bid\"}"
             - "{l.buy_now ? \"<yellow>Shift-click: buy now for \" : \"\"}{l.buy_now ? l.buy_now_display : \"\"}"
           fr:
+            - "<gold>Enchère"
             - ""
             - "<gray>Mise de départ : <gold>{l.start_price_display}"
             - "<gray>Offres : <white>{l.bid_count} <dark_gray>· <gray>meilleure : <gold>{l.has_bids ? l.current_bid_display : \"-\"}"
