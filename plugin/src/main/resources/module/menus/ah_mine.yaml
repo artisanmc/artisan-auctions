@@ -32,6 +32,7 @@ elements:
     item: "{l.icon}"
     lore:
       en:
+        - "{l.is_auction ? \"<gold>Auction\" : \"<green>Fixed price\"}"
         - ""
         - "<gray>{l.is_auction ? \"Opening bid\" : \"Price\"}: <gold>{l.is_auction ? l.start_price_display : l.price_display}"
         - "{l.has_bids ? \"<gray>Best bid: <gold>\" : \"\"}{l.has_bids ? l.current_bid_display : \"\"}"
@@ -39,6 +40,7 @@ elements:
         - ""
         - "<red>Click to withdraw"
       fr:
+        - "{l.is_auction ? \"<gold>Enchère\" : \"<green>Prix fixe\"}"
         - ""
         - "<gray>{l.is_auction ? \"Mise de départ\" : \"Prix\"} : <gold>{l.is_auction ? l.start_price_display : l.price_display}"
         - "{l.has_bids ? \"<gray>Meilleure offre : <gold>\" : \"\"}{l.has_bids ? l.current_bid_display : \"\"}"
