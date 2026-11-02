@@ -107,14 +107,14 @@ Inside the plugin, Bukkit stays at the edge so the rules are tested without a se
 
 ## Build
 
-Requires Artisan 2 with the API 2.15.0 (files read under either YAML extension, system templates,
-text without Adventure, table prefix, module folders, player commands). Paper or Spigot; the plugin is not marked for Folia. On Paper, items are stored
+Requires Artisan with the API 1.0.0 or later. Paper or Spigot; the plugin is not marked for Folia. On Paper, items are stored
 with Paper's byte serialization; on Spigot, with Bukkit's YAML serialization (`yaml:` prefix).
-A server moving from Paper to Spigot cannot read the items stored on Paper. Until the API is released:
+A server moving from Paper to Spigot cannot read the items stored on Paper. `artisan-core-api` comes
+from `repo.artisanmc.net/releases`; for an unreleased version, publish it locally first
+(`cd ../artisan/plugin && ./gradlew :artisan-api:publishToMavenLocal -PapiVersion=<version>`).
 
 ```bash
-cd ../artisan/plugin && ./gradlew :artisan-api:publishToMavenLocal -PapiVersion=2.17.0
-cd ../../artisan-auctions && ./gradlew build   # → plugin/build/libs/ArtisanAuctions-<version>.jar
+./gradlew build   # → plugin/build/libs/ArtisanAuctions-<version>.jar
 ```
 
 Kotlin's stdlib is not shaded: it comes from Artisan, which ships it under its own names.
