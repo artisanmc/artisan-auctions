@@ -14,7 +14,7 @@ import java.nio.file.StandardCopyOption
  *
  * Artisan writes `.artisan/` and the command files into the folder before the add-on starts: a
  * folder is never empty on a first start, which is why "write the defaults into an empty folder"
- * left Artisan 2 servers with `/ah` alone.
+ * left servers with `/ah` alone.
  */
 object ModuleFiles {
     const val ROOT = "module"

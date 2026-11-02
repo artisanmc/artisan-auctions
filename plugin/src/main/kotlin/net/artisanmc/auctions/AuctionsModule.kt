@@ -78,7 +78,7 @@ class AuctionsModule(
         const val ID = "auctions"
         /** The module's folder, `plugins/Artisan/modules/auctions/`: the id Artisan's API reads its files by. */
         const val FOLDER = "auctions"
-        /** Where the files lived before Artisan 2.8 gave modules their folder: moved from there once. */
+        /** Where the files lived before Artisan gave modules their folder: moved from there once. */
         const val LEGACY_DIR = "editor"
         const val CONFIG_PATH = "data/config.yaml"
         const val SETTINGS_SCREEN = "auctions:settings"

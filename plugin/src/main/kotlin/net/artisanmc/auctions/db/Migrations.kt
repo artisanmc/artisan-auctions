@@ -97,7 +97,7 @@ class Migrations(
     }
 
     private companion object {
-        /** The tables' prefix before Artisan's table prefix (API 2.9.0). */
+        /** The tables' prefix before Artisan's table prefix. */
         const val LEGACY_PREFIX = "auc_"
         val TABLES = listOf("listings", "listing_items", "bids", "sales", "claims", "import_map", "payments", "schema_history")
         val CREATE_INDEX = Regex("^CREATE\\s+INDEX\\s+(\\w+)\\s+ON\\s+(\\w+)", RegexOption.IGNORE_CASE)
