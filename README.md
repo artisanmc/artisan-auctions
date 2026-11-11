@@ -4,6 +4,9 @@ Auction house add-on for the [Artisan](https://artisanmc.net) suite: fixed-price
 timed auctions, or both. Menus, dialogs and texts are files of the module's folder,
 `plugins/Artisan/modules/auctions/`, the admin edits in the Artisan editor; the plugin brings the rules, the money and the storage.
 
+User docs: [`docs/site/`](docs/site/), published on
+[artisanmc.net/docs/auctions](https://artisanmc.net/docs/auctions/) at each release.
+
 ## For server owners
 
 - **Kinds of listing.** `sales.enabled` and `auctions.enabled` in the **Settings** screen
@@ -31,8 +34,9 @@ timed auctions, or both. Menus, dialogs and texts are files of the module's fold
 - **Several servers on one database.** Each server keeps its own house, tagged by
   `server-id` in `plugins/ArtisanAuctions/config.yml`.
 
-`/ah` is declared to Artisan (`auctions:ah`): rename it, add aliases, a cooldown or conditions
-with a `command_override/v1` file in `overrides/command/` of the module's folder.
+`/ah` (aliases `/auctionhouse`, `/hdv`) is declared to Artisan (`auctions:ah`), which writes it as
+the command file `commands/ah.yml` of the module's folder: rename it, add aliases, a cooldown or
+conditions there or in the editor. An edited file stays yours; Reset puts the module's back.
 
 | Command | Permission |
 |---|---|
@@ -105,11 +109,12 @@ Inside the plugin, Bukkit stays at the edge so the rules are tested without a se
 
 ## Build
 
-Requires Artisan 2 with the API 2.15.0 (files read under either YAML extension, system templates, table prefix, module folders, player commands). Paper only: the
-plugin is not marked for Folia. Until the API is released:
+Requires Artisan with the API 1.0.0 or later (Artisan 1.0.0). Paper only: the plugin is not
+marked for Folia. `artisan-core-api` comes from `repo.artisanmc.net/releases`; for an unreleased
+version, publish it locally first:
 
 ```bash
-cd ../artisan/plugin && ./gradlew :artisan-api:publishToMavenLocal -PapiVersion=2.17.0
+cd ../artisan/plugin && ./gradlew :artisan-api:publishToMavenLocal -PapiVersion=1.0.0
 cd ../../artisan-auctions && ./gradlew build   # → plugin/build/libs/ArtisanAuctions-<version>.jar
 ```
 
