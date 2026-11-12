@@ -8,7 +8,7 @@ import net.artisanmc.auctions.sources.ListingRows
 import net.artisanmc.modules.api.action.ModuleActionsApi
 import net.artisanmc.modules.api.menu.MenuApi
 import net.artisanmc.modules.api.menu.MenuRef
-import net.kyori.adventure.text.Component
+import net.artisanmc.modules.api.text.TextApi
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import java.math.BigDecimal
@@ -25,6 +25,7 @@ import java.util.logging.Logger
 class ModuleNotifier(
     private val actions: ModuleActionsApi,
     private val menus: MenuApi,
+    private val text: TextApi,
     private val config: () -> AuctionsConfig,
     private val logger: Logger,
 ) : Notifier {
@@ -38,7 +39,11 @@ class ModuleNotifier(
 
     /** A message another plugin supplied with its veto, or the generic one. */
     fun veto(player: Player, message: Any?) {
-        if (message is Component) player.sendMessage(message) else tell(player, "vetoed")
+        when {
+            message is String -> text.send(player, message)
+            Platform.paper && PaperOnly.sendComponent(player, message) -> {}
+            else -> tell(player, "vetoed")
+        }
     }
 
     fun openMenu(player: Player, menu: String, args: Map<String, Any> = emptyMap()) {

@@ -22,8 +22,9 @@ class AuctionsModule(
     private val config: ConfigStore,
     private val currencies: Currencies,
     private val logger: Logger,
-    private val ahCommand: () -> PlayerCommandDeclaration,
     private val house: (ArtisanAPI) -> AuctionHouse,
+    /** `/ah` and its sub-commands. */
+    private val ahCommand: () -> PlayerCommandDeclaration,
 ) : ArtisanModule {
     override fun getId(): String = ID
     override fun getSchemaVersion(): String = "auctions/v1"
@@ -38,9 +39,8 @@ class AuctionsModule(
         api.dataSources.register(SettingsSource.declaration { config.current })
         loadConfig(api)
         ModuleBindings.declare(api, house(api))
-        // Declared here, so owned by the module: Artisan then knows `commands/ah.yml` of the
-        // folder is this command's file and registers `/ah` from it alone. Declared outside a
-        // module, the command had no owner and was registered a second time, refused as taken.
+        // Here, not in the plugin's onEnable: `/ah` belongs to this module, its folder holds its
+        // file, and disabling the module removes it.
         api.playerCommands.register(ahCommand())
     }
 
@@ -78,7 +78,7 @@ class AuctionsModule(
         const val ID = "auctions"
         /** The module's folder, `plugins/Artisan/modules/auctions/`: the id Artisan's API reads its files by. */
         const val FOLDER = "auctions"
-        /** Where the files lived before Artisan 2.8 gave modules their folder: moved from there once. */
+        /** Where the files lived before Artisan gave modules their folder: moved from there once. */
         const val LEGACY_DIR = "editor"
         const val CONFIG_PATH = "data/config.yaml"
         const val SETTINGS_SCREEN = "auctions:settings"

@@ -1,7 +1,6 @@
 package net.artisanmc.auctions.paper
 
 import net.artisanmc.auctions.median.ItemFacts
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.PotionMeta
 import org.bukkit.persistence.PersistentDataContainer
@@ -10,8 +9,6 @@ import java.lang.reflect.Method
 
 /** Reads from a stack what [net.artisanmc.auctions.median.PriceKeys] needs. */
 object PaperFacts {
-    private val plain = PlainTextComponentSerializer.plainText()
-
     fun of(stack: ItemStack): ItemFacts {
         val meta = stack.itemMeta
         val pdc = meta?.persistentDataContainer?.let(::entries).orEmpty()
@@ -19,9 +16,9 @@ object PaperFacts {
             material = stack.type.name,
             pluginIds = listOfNotNull(itemsAdderId(stack)?.let { "itemsadder" to it }).toMap(),
             pdc = pdc,
-            itemName = meta?.takeIf { it.hasItemName() }?.itemName()?.let(plain::serialize),
-            customName = meta?.takeIf { it.hasDisplayName() }?.displayName()?.let(plain::serialize),
-            lore = meta?.lore()?.map(plain::serialize).orEmpty(),
+            itemName = meta?.let(PaperItems::plainItemName),
+            customName = meta?.let(PaperItems::plainCustomName),
+            lore = PaperItems.plainLore(stack),
             enchants = stack.enchantments.entries.associate { (e, level) -> e.key.key to level },
             potion = (meta as? PotionMeta)?.basePotionType?.key?.key,
         )

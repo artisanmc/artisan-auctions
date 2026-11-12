@@ -7,7 +7,7 @@ timed auctions, or both. Menus, dialogs and texts are files of the module's fold
 ## For server owners
 
 - **Kinds of listing.** `sales.enabled` and `auctions.enabled` in the **Settings** screen
-  (`data/config.yaml` of the module's folder). Both on: the menus show type tabs. Both off: the house
+  (`data/config.yaml` of the module's folder). Both on: the main menu shows a filter button (all, sales, auctions). Both off: the house
   is read-only and claims still work.
 - **Selling.** Hold the item, click *Sell* in `/ah` (or `/ah sell <price>`,
   `/ah auction <opening bid> [duration] [buy-now]`). The listing fee is kept, the sale tax is
@@ -31,8 +31,10 @@ timed auctions, or both. Menus, dialogs and texts are files of the module's fold
 - **Several servers on one database.** Each server keeps its own house, tagged by
   `server-id` in `plugins/ArtisanAuctions/config.yml`.
 
-`/ah` is declared to Artisan (`auctions:ah`): rename it, add aliases, a cooldown or conditions
-with a `command_override/v1` file in `overrides/command/` of the module's folder.
+`/ah` is declared by the auctions module (`auctions:ah`), and Artisan writes it as the command
+file `commands/ah.yaml` of the module's folder (`plugins/Artisan/modules/auctions/`): rename it,
+add aliases, a cooldown or conditions from that folder in the editor, or in that file. Turning the
+module off removes the command.
 
 | Command | Permission |
 |---|---|
@@ -105,12 +107,14 @@ Inside the plugin, Bukkit stays at the edge so the rules are tested without a se
 
 ## Build
 
-Requires Artisan 2 with the API 2.15.0 (files read under either YAML extension, system templates, table prefix, module folders, player commands). Paper only: the
-plugin is not marked for Folia. Until the API is released:
+Requires Artisan with the API 1.0.0 or later. Paper or Spigot; the plugin is not marked for Folia. On Paper, items are stored
+with Paper's byte serialization; on Spigot, with Bukkit's YAML serialization (`yaml:` prefix).
+A server moving from Paper to Spigot cannot read the items stored on Paper. `artisan-core-api` comes
+from `repo.artisanmc.net/releases`; for an unreleased version, publish it locally first
+(`cd ../artisan/plugin && ./gradlew :artisan-api:publishToMavenLocal -PapiVersion=<version>`).
 
 ```bash
-cd ../artisan/plugin && ./gradlew :artisan-api:publishToMavenLocal -PapiVersion=2.17.0
-cd ../../artisan-auctions && ./gradlew build   # → plugin/build/libs/ArtisanAuctions-<version>.jar
+./gradlew build   # → plugin/build/libs/ArtisanAuctions-<version>.jar
 ```
 
 Kotlin's stdlib is not shaded: it comes from Artisan, which ships it under its own names.

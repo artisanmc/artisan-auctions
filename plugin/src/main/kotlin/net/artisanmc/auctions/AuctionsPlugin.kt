@@ -10,6 +10,7 @@ import net.artisanmc.auctions.paper.AhCommand
 import net.artisanmc.auctions.paper.AuctionHouse
 import net.artisanmc.auctions.paper.Currencies
 import net.artisanmc.auctions.paper.Imports
+import net.artisanmc.auctions.paper.PaperItems
 import net.artisanmc.auctions.paper.PlayerListener
 import net.artisanmc.auctions.files.ModuleFiles
 import net.artisanmc.modules.api.ArtisanAPI
@@ -39,6 +40,7 @@ class AuctionsPlugin : JavaPlugin() {
             return
         }
         serverId = loadServerId()
+        PaperItems.text = api.text
 
         try {
             dataSource = api.database.dataSource(this)
@@ -63,7 +65,7 @@ class AuctionsPlugin : JavaPlugin() {
         val house = AuctionHouse(this, api, serverId, AuctionStore(dataSource, tablePrefix), currencies) { configStore.current }
         this.house = house
         val admin = AdminCommands(house, Imports(this, house, currencies))
-        api.modules.register(AuctionsModule(configStore, currencies, logger, { AhCommand.declaration(house, admin) }) { house })
+        api.modules.register(AuctionsModule(configStore, currencies, logger, { house }) { AhCommand.declaration(house, admin) })
         server.servicesManager.register(AuctionsService::class.java, AuctionsServiceImpl(configStore, house), this, ServicePriority.Normal)
 
         server.pluginManager.registerEvents(PlayerListener(house), this)
@@ -95,10 +97,10 @@ class AuctionsPlugin : JavaPlugin() {
 
     companion object {
         /**
-         * `project.read` of either YAML extension (2.15.0); system templates since 2.12.0, table
-         * prefix since 2.9.0, module folders since 2.8.0, player commands since 2.7.0.
+         * `project.read` of either YAML extension, system templates, text without Adventure,
+         * table prefix, module folders, player commands.
          */
-        const val MIN_CORE_API = "2.15.0"
+        const val MIN_CORE_API = "1.0.0"
         /** Ends due listings every 5 s. */
         const val EXPIRY_TICKS = 100L
         /** Purges claims past their retention every hour. */

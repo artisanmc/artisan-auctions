@@ -7,7 +7,7 @@ import net.artisanmc.modules.api.command.CommandDeclaration
 import net.artisanmc.modules.api.datasource.DataFetcher
 import net.artisanmc.modules.api.datasource.DataSourceDeclaration
 import net.artisanmc.modules.api.datasource.DataSourceField
-import net.artisanmc.modules.api.datasource.FieldKind
+import net.artisanmc.modules.api.model.ModelFieldType
 import org.bukkit.entity.Player
 import java.util.UUID
 
@@ -24,39 +24,39 @@ object ModuleBindings {
     const val PRICE = "auctions:price"
 
     val LISTING_FIELDS = listOf(
-        DataSourceField("id", FieldKind.STRING, "Listing id, for auctions:buy / bid / cancel"),
-        DataSourceField("type", FieldKind.STRING, "sale or auction"),
-        DataSourceField("is_sale", FieldKind.BOOLEAN, "Fixed-price sale"),
-        DataSourceField("is_auction", FieldKind.BOOLEAN, "Auction"),
-        DataSourceField("icon", FieldKind.OBJECT, "The item, for `item: \"{l.icon}\"`"),
-        DataSourceField("name", FieldKind.STRING, "Item name (MiniMessage)"),
-        DataSourceField("seller", FieldKind.STRING, "Seller name"),
-        DataSourceField("seller_uuid", FieldKind.STRING, "Seller UUID"),
-        DataSourceField("own", FieldKind.BOOLEAN, "The viewer is the seller"),
-        DataSourceField("currency", FieldKind.STRING, "Currency id"),
-        DataSourceField("price", FieldKind.NUMBER, "Sale price, or the bid to beat"),
-        DataSourceField("price_display", FieldKind.STRING, "price, formatted with its currency"),
-        DataSourceField("buy_now", FieldKind.BOOLEAN, "Can be bought outright"),
-        DataSourceField("buy_now_display", FieldKind.STRING, "Buy-now price, formatted"),
-        DataSourceField("start_price_display", FieldKind.STRING, "Opening bid, formatted"),
-        DataSourceField("current_bid_display", FieldKind.STRING, "Leading bid, formatted (empty without bids)"),
-        DataSourceField("min_bid", FieldKind.STRING, "Lowest next bid, plain number"),
-        DataSourceField("min_bid_display", FieldKind.STRING, "Lowest next bid, formatted"),
-        DataSourceField("has_bids", FieldKind.BOOLEAN, "At least one bid"),
-        DataSourceField("bid_count", FieldKind.INTEGER, "Number of bids"),
-        DataSourceField("leading", FieldKind.BOOLEAN, "The viewer holds the leading bid"),
-        DataSourceField("is_lot", FieldKind.BOOLEAN, "Several stacks sold together"),
-        DataSourceField("lot_size", FieldKind.INTEGER, "Stacks in the lot"),
-        DataSourceField("quantity", FieldKind.INTEGER, "Items in total"),
-        DataSourceField("created_at", FieldKind.NUMBER, "Epoch millis"),
-        DataSourceField("ends_at", FieldKind.NUMBER, "Epoch millis, for {l.ends_at.until()}"),
-        DataSourceField("ended", FieldKind.BOOLEAN, "Past its end, closing"),
-        DataSourceField("has_median", FieldKind.BOOLEAN, "Enough sales of this item for a median"),
-        DataSourceField("median_display", FieldKind.STRING, "Median price of one item, formatted"),
-        DataSourceField("median_sales", FieldKind.INTEGER, "Sales the median rests on"),
-        DataSourceField("median_days", FieldKind.INTEGER, "Days those sales cover"),
-        DataSourceField("median_ratio", FieldKind.INTEGER, "Unit price against the median, in percent (-20 = 20 % below)"),
-        DataSourceField("median_ratio_display", FieldKind.STRING, "median_ratio as text: -20 %, +15 %"),
+        DataSourceField("id", ModelFieldType.string(), "Listing id, for auctions:buy / bid / cancel"),
+        DataSourceField("type", ModelFieldType.string(), "sale or auction"),
+        DataSourceField("is_sale", ModelFieldType.bool(), "Fixed-price sale"),
+        DataSourceField("is_auction", ModelFieldType.bool(), "Auction"),
+        DataSourceField("icon", ModelFieldType.`object`(emptyList()), "The item, for `item: \"{l.icon}\"`"),
+        DataSourceField("name", ModelFieldType.string(), "Item name (MiniMessage)"),
+        DataSourceField("seller", ModelFieldType.string(), "Seller name"),
+        DataSourceField("seller_uuid", ModelFieldType.string(), "Seller UUID"),
+        DataSourceField("own", ModelFieldType.bool(), "The viewer is the seller"),
+        DataSourceField("currency", ModelFieldType.string(), "Currency id"),
+        DataSourceField("price", ModelFieldType.number(), "Sale price, or the bid to beat"),
+        DataSourceField("price_display", ModelFieldType.string(), "price, formatted with its currency"),
+        DataSourceField("buy_now", ModelFieldType.bool(), "Can be bought outright"),
+        DataSourceField("buy_now_display", ModelFieldType.string(), "Buy-now price, formatted"),
+        DataSourceField("start_price_display", ModelFieldType.string(), "Opening bid, formatted"),
+        DataSourceField("current_bid_display", ModelFieldType.string(), "Leading bid, formatted (empty without bids)"),
+        DataSourceField("min_bid", ModelFieldType.string(), "Lowest next bid, plain number"),
+        DataSourceField("min_bid_display", ModelFieldType.string(), "Lowest next bid, formatted"),
+        DataSourceField("has_bids", ModelFieldType.bool(), "At least one bid"),
+        DataSourceField("bid_count", ModelFieldType.integer(), "Number of bids"),
+        DataSourceField("leading", ModelFieldType.bool(), "The viewer holds the leading bid"),
+        DataSourceField("is_lot", ModelFieldType.bool(), "Several stacks sold together"),
+        DataSourceField("lot_size", ModelFieldType.integer(), "Stacks in the lot"),
+        DataSourceField("quantity", ModelFieldType.integer(), "Items in total"),
+        DataSourceField("created_at", ModelFieldType.number(), "Epoch millis"),
+        DataSourceField("ends_at", ModelFieldType.number(), "Epoch millis, for {l.ends_at.until()}"),
+        DataSourceField("ended", ModelFieldType.bool(), "Past its end, closing"),
+        DataSourceField("has_median", ModelFieldType.bool(), "Enough sales of this item for a median"),
+        DataSourceField("median_display", ModelFieldType.string(), "Median price of one item, formatted"),
+        DataSourceField("median_sales", ModelFieldType.integer(), "Sales the median rests on"),
+        DataSourceField("median_days", ModelFieldType.integer(), "Days those sales cover"),
+        DataSourceField("median_ratio", ModelFieldType.integer(), "Unit price against the median, in percent (-20 = 20 % below)"),
+        DataSourceField("median_ratio_display", ModelFieldType.string(), "median_ratio as text: -20 %, +15 %"),
     )
 
     fun declare(api: ArtisanAPI, house: AuctionHouse) {
@@ -79,22 +79,22 @@ object ModuleBindings {
                 mapOf("slot" to item.slot, "icon" to item.display + ("count" to item.quantity.coerceIn(1, 64)), "quantity" to item.quantity)
             }
         }, listOf(
-            DataSourceField("slot", FieldKind.INTEGER, "Order in the lot"),
-            DataSourceField("icon", FieldKind.OBJECT, "The stack"),
-            DataSourceField("quantity", FieldKind.INTEGER, "Items in the stack"),
+            DataSourceField("slot", ModelFieldType.integer(), "Order in the lot"),
+            DataSourceField("icon", ModelFieldType.`object`(emptyList()), "The stack"),
+            DataSourceField("quantity", ModelFieldType.integer(), "Items in the stack"),
         )))
 
         api.dataSources.register(DataSourceDeclaration(CLAIMS, { player, _ ->
             player?.uniqueId?.let(house.claims::rows).orEmpty()
         }, listOf(
-            DataSourceField("id", FieldKind.STRING, "Claim id, for auctions:claim"),
-            DataSourceField("kind", FieldKind.STRING, "item or money"),
-            DataSourceField("is_money", FieldKind.BOOLEAN, "An amount rather than an item"),
-            DataSourceField("icon", FieldKind.OBJECT, "The item (gold ingot for money)"),
-            DataSourceField("amount_display", FieldKind.STRING, "Amount, formatted"),
-            DataSourceField("reason", FieldKind.STRING, "bought, sold, expired, cancelled, won, refund, outbid, imported"),
-            DataSourceField("created_at", FieldKind.NUMBER, "Epoch millis"),
-            DataSourceField("expires_at", FieldKind.NUMBER, "When an unclaimed item is purged, epoch millis"),
+            DataSourceField("id", ModelFieldType.string(), "Claim id, for auctions:claim"),
+            DataSourceField("kind", ModelFieldType.string(), "item or money"),
+            DataSourceField("is_money", ModelFieldType.bool(), "An amount rather than an item"),
+            DataSourceField("icon", ModelFieldType.`object`(emptyList()), "The item (gold ingot for money)"),
+            DataSourceField("amount_display", ModelFieldType.string(), "Amount, formatted"),
+            DataSourceField("reason", ModelFieldType.string(), "bought, sold, expired, cancelled, won, refund, outbid, imported"),
+            DataSourceField("created_at", ModelFieldType.number(), "Epoch millis"),
+            DataSourceField("expires_at", ModelFieldType.number(), "When an unclaimed item is purged, epoch millis"),
         )))
 
         // One row per viewer: counters for buttons ("My listings (3)", "Claims (2)").
@@ -108,11 +108,11 @@ object ModuleBindings {
                 "claims" to (viewer?.let { house.claims.of(it).size } ?: 0),
             ))
         }, listOf(
-            DataSourceField("id", FieldKind.STRING, "Always `summary`"),
-            DataSourceField("listings", FieldKind.INTEGER, "Active listings in the house"),
-            DataSourceField("mine", FieldKind.INTEGER, "Active listings of the viewer"),
-            DataSourceField("limit", FieldKind.INTEGER, "How many the viewer may have"),
-            DataSourceField("claims", FieldKind.INTEGER, "Items and amounts waiting in the viewer's box"),
+            DataSourceField("id", ModelFieldType.string(), "Always `summary`"),
+            DataSourceField("listings", ModelFieldType.integer(), "Active listings in the house"),
+            DataSourceField("mine", ModelFieldType.integer(), "Active listings of the viewer"),
+            DataSourceField("limit", ModelFieldType.integer(), "How many the viewer may have"),
+            DataSourceField("claims", ModelFieldType.integer(), "Items and amounts waiting in the viewer's box"),
         )))
 
         // The median of the held item (or of `item`, a material name), for any menu.
@@ -125,13 +125,13 @@ object ModuleBindings {
             val key = house.priceKey(stack)
             listOf(mapOf("id" to "price", "has_item" to true, "key" to key) + house.medianArgs(house.medians.get(key, currency), currency))
         }, listOf(
-            DataSourceField("id", FieldKind.STRING, "Always `price`"),
-            DataSourceField("has_item", FieldKind.BOOLEAN, "An item was found (held, or given by `item`)"),
-            DataSourceField("key", FieldKind.STRING, "The item's price key"),
-            DataSourceField("has_median", FieldKind.BOOLEAN, "Enough sales for a median"),
-            DataSourceField("median", FieldKind.STRING, "Median price of one item, formatted (- when unknown)"),
-            DataSourceField("median_sales", FieldKind.INTEGER, "Sales the median rests on"),
-            DataSourceField("median_days", FieldKind.INTEGER, "Days those sales cover"),
+            DataSourceField("id", ModelFieldType.string(), "Always `price`"),
+            DataSourceField("has_item", ModelFieldType.bool(), "An item was found (held, or given by `item`)"),
+            DataSourceField("key", ModelFieldType.string(), "The item's price key"),
+            DataSourceField("has_median", ModelFieldType.bool(), "Enough sales for a median"),
+            DataSourceField("median", ModelFieldType.string(), "Median price of one item, formatted (- when unknown)"),
+            DataSourceField("median_sales", ModelFieldType.integer(), "Sales the median rests on"),
+            DataSourceField("median_days", ModelFieldType.integer(), "Days those sales cover"),
         )))
 
         command(api, "auctions:sell_confirm") { p, _ -> house.confirmSell(p) }
