@@ -23,24 +23,6 @@ object ModuleFiles {
     const val VERSION = 2
 
     val PATHS = listOf(
-        "assets/glyphs/bg_ah_claims.png",
-        "assets/glyphs/bg_ah_claims.yaml",
-        "assets/glyphs/bg_ah_lot.png",
-        "assets/glyphs/bg_ah_lot.yaml",
-        "assets/glyphs/bg_ah_main.png",
-        "assets/glyphs/bg_ah_main.yaml",
-        "assets/glyphs/bg_ah_main_bedrock.png",
-        "assets/glyphs/bg_ah_main_bedrock.yaml",
-        "assets/glyphs/bg_ah_mine.png",
-        "assets/glyphs/bg_ah_mine.yaml",
-        "assets/textures/arrow_left.png",
-        "assets/textures/arrow_left.yaml",
-        "assets/textures/arrow_right.png",
-        "assets/textures/arrow_right.yaml",
-        "assets/textures/back.png",
-        "assets/textures/back.yaml",
-        "assets/textures/close.png",
-        "assets/textures/close.yaml",
         "data/config.yaml",
         "dialogs/ah_bid.yaml",
         "dialogs/ah_confirm_buy.yaml",
@@ -57,14 +39,7 @@ object ModuleFiles {
         "menus/ah_mine.yaml",
         "models/config.yaml",
         "variants.yaml",
-        "variants/bedrock/menus/ah_claims.yaml",
-        "variants/bedrock/menus/ah_lot.yaml",
         "variants/bedrock/menus/ah_main.yaml",
-        "variants/bedrock/menus/ah_mine.yaml",
-        "variants/textured/menus/ah_claims.yaml",
-        "variants/textured/menus/ah_lot.yaml",
-        "variants/textured/menus/ah_main.yaml",
-        "variants/textured/menus/ah_mine.yaml",
     )
 
     fun template(loader: ClassLoader): TemplateDeclaration =

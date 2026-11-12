@@ -1,12 +1,9 @@
 schema: variants/v1
-# Who sees which version of the menus. A Bedrock player gets 'bedrock' (a tap is the only
-# click Bedrock sends); a Java player who loaded the resource pack gets 'textured';
-# everyone else gets the module's own menus, which need no pack.
-variants: [bedrock, textured]
+# Who sees which version of the menus. A Bedrock player gets 'bedrock' for the menus it holds:
+# those that put actions on other clicks than the left one, the only click Bedrock sends.
+# Every other menu, and every other player, gets the module's own.
+variants: [bedrock]
 show:
   - if: [{ client_is: bedrock }]
     do: [{ show_variant: bedrock }]
-    else:
-      - if: [{ has_resource_pack: true }]
-        do: [{ show_variant: textured }]
   - show_default

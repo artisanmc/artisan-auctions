@@ -3,8 +3,6 @@ schema: menu/v1
 # Bedrock sends). The 'mode' button of the bottom bar picks what a tap on a listing does: buy or
 # bid, buy an auction now, or see the lot's contents. 'mode' is a menu arg it sets, not an input.
 title:
-  - kind: background
-    asset_id: bg_ah_main_bedrock
   - kind: plain
     value: {en: "<dark_gray>Auction House", fr: "<dark_gray>Hôtel des ventes"}
 size: 54
@@ -24,8 +22,16 @@ inputs:
       ref: "auctions:listings"
       params: {tab: "{tab}", sort: "{sort}", search: "{search}"}
 elements:
+  - id: border
+    positions: "0-1,7,9,17-18,26-27,35-36,44,51"
+    material: GRAY_STAINED_GLASS_PANE
+    title: " "
+
+  # ── Type tabs: only when both sales and auctions are enabled ──
   - id: tab_all
     positions: 2
+    material: GRAY_STAINED_GLASS_PANE
+    title: " "
     states:
       - if: [expression: "settings[0].both && tab == \"all\""]
         material: NETHER_STAR
@@ -37,6 +43,8 @@ elements:
         click: {left: [set_arg: {arg: tab, value: "all"}]}
   - id: tab_sale
     positions: 3
+    material: GRAY_STAINED_GLASS_PANE
+    title: " "
     states:
       - if: [expression: "settings[0].both && tab == \"sale\""]
         material: EMERALD
@@ -48,6 +56,8 @@ elements:
         click: {left: [set_arg: {arg: tab, value: "sale"}]}
   - id: tab_auction
     positions: 5
+    material: GRAY_STAINED_GLASS_PANE
+    title: " "
     states:
       - if: [expression: "settings[0].both && tab == \"auction\""]
         material: GOLDEN_AXE
@@ -80,6 +90,8 @@ elements:
 
   - id: clear_search
     positions: 6
+    material: GRAY_STAINED_GLASS_PANE
+    title: " "
     states:
       - if: [expression: "search != \"\""]
         material: BARRIER
@@ -189,6 +201,8 @@ elements:
             - open_dialog: {dialog_id: ah_bid, context: {id: "{l.id}", name: "{l.name}", min_bid: "{l.min_bid}", min_bid_display: "{l.min_bid_display}", seller: "{l.seller}"}}
   - id: back
     positions: 45
+    material: GRAY_STAINED_GLASS_PANE
+    title: " "
     states:
       - if: [expression: "has_previous_menu"]
         material: ARROW
@@ -228,6 +242,8 @@ elements:
     click: {left: [pagination_prev: grid]}
     states:
       - if: [pagination_at_first: grid]
+        material: GRAY_STAINED_GLASS_PANE
+        title: " "
   - id: sell
     positions: 49
     material: GOLD_INGOT
@@ -246,6 +262,8 @@ elements:
     click: {left: [pagination_next: grid]}
     states:
       - if: [pagination_at_last: grid]
+        material: GRAY_STAINED_GLASS_PANE
+        title: " "
   - id: claims
     positions: 52
     material: ENDER_CHEST

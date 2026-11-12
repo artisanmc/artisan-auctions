@@ -5,7 +5,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
-/** The menus' variants the module ships: `textured` (resource pack) and `bedrock`. */
+/** The Bedrock versions of the menus the module ships. */
 class VariantFilesTest {
     private val otherClick = Regex("^\\s*(right|shift_left|shift_right|middle|drop)\\s*:", RegexOption.MULTILINE)
 
@@ -25,6 +25,6 @@ class VariantFilesTest {
             assertEquals(module["inputs"], variant["inputs"], path)
             if (name == "bedrock") assertFalse(otherClick.containsMatchIn(text), path)
         }
-        assertEquals(8, variants.size)
+        assertEquals(1, variants.size)
     }
 }
