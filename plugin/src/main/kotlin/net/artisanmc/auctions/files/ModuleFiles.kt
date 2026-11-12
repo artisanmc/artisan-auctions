@@ -20,7 +20,7 @@ object ModuleFiles {
     const val ROOT = "module"
     const val TEMPLATE = "auctions_files"
     /** Raise it whenever a file of [PATHS] changes: untouched copies follow, edited ones merge. */
-    const val VERSION = 1
+    const val VERSION = 2
 
     val PATHS = listOf(
         "data/config.yaml",
@@ -38,6 +38,8 @@ object ModuleFiles {
         "menus/ah_main.yaml",
         "menus/ah_mine.yaml",
         "models/config.yaml",
+        "variants.yaml",
+        "variants/bedrock/menus/ah_main.yaml",
     )
 
     fun template(loader: ClassLoader): TemplateDeclaration =

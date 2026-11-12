@@ -1,0 +1,9 @@
+schema: variants/v1
+# Who sees which version of the menus. A Bedrock player gets 'bedrock' for the menus it holds:
+# those that put actions on other clicks than the left one, the only click Bedrock sends.
+# Every other menu, and every other player, gets the module's own.
+variants: [bedrock]
+show:
+  - if: [{ client_is: bedrock }]
+    do: [{ show_variant: bedrock }]
+  - show_default
