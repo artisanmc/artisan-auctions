@@ -2,7 +2,7 @@
 
 Auction house add-on for the [Artisan](https://artisanmc.net) suite: fixed-price sales,
 timed auctions, or both. Menus, dialogs and texts are files of the module's folder,
-`plugins/Artisan/modules/auctions/`, the admin edits in the Artisan editor; the plugin brings the rules, the money and the storage.
+`plugins/ArtisanAuctions/artisan_module/`, the admin edits in the Artisan editor; the plugin brings the rules, the money and the storage.
 
 ## For server owners
 
@@ -32,7 +32,7 @@ timed auctions, or both. Menus, dialogs and texts are files of the module's fold
   `server-id` in `plugins/ArtisanAuctions/config.yml`.
 
 `/ah` is declared by the auctions module (`auctions:ah`), and Artisan writes it as the command
-file `commands/ah.yaml` of the module's folder (`plugins/Artisan/modules/auctions/`): rename it,
+file `commands/ah.yaml` of the module's folder (`plugins/ArtisanAuctions/artisan_module/`): rename it,
 add aliases, a cooldown or conditions from that folder in the editor, or in that file. Turning the
 module off removes the command.
 
@@ -99,7 +99,7 @@ Inside the plugin, Bukkit stays at the edge so the rules are tested without a se
 - `paper/`: the Paper side: item serialization, currencies, events, menu repaints, `/ah`,
   data sources and module commands.
 - `src/main/resources/module/`: the menus, dialogs, texts and settings of the module's folder
-  `plugins/Artisan/modules/auctions/`, a system template Artisan keeps there (`files/ModuleFiles`):
+  `plugins/ArtisanAuctions/artisan_module/`, a system template Artisan keeps there (`files/ModuleFiles`):
   a missing file is written again, an untouched one follows each new version, an edited one
   stays the admin's until Reset. List a new file in `ModuleFiles.PATHS` and raise
   `ModuleFiles.VERSION` when one changes. Files left in `plugins/ArtisanAuctions/editor/` by an
@@ -107,7 +107,7 @@ Inside the plugin, Bukkit stays at the edge so the rules are tested without a se
 
 ## Build
 
-Requires Artisan with the API 1.0.0 or later. Paper or Spigot; the plugin is not marked for Folia. On Paper, items are stored
+Requires Artisan with the API 1.1.0 or later. Paper or Spigot; the plugin is not marked for Folia. On Paper, items are stored
 with Paper's byte serialization; on Spigot, with Bukkit's YAML serialization (`yaml:` prefix).
 A server moving from Paper to Spigot cannot read the items stored on Paper. `artisan-core-api` comes
 from `repo.artisanmc.net/releases`; for an unreleased version, publish it locally first
