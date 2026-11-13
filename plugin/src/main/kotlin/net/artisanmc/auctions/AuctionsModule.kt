@@ -76,7 +76,9 @@ class AuctionsModule(
 
     companion object {
         const val ID = "auctions"
-        /** The module's folder, `plugins/Artisan/modules/auctions/`: the id Artisan's API reads its files by. */
+        /** The folder of the module's files inside this plugin's data folder. */
+        const val MODULE_DIR = "artisan_module"
+        /** The module's project id, the one Artisan's API reads its files by. */
         const val FOLDER = "auctions"
         /** Where the files lived before Artisan gave modules their folder: moved from there once. */
         const val LEGACY_DIR = "editor"

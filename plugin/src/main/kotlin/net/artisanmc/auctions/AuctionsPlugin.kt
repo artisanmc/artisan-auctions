@@ -52,10 +52,13 @@ class AuctionsPlugin : JavaPlugin() {
             return
         }
 
-        // plugins/Artisan/modules/auctions/: menus, dialogs, texts and settings, edited in the editor.
-        // Claimed before the module registers its files there (AuctionsModule.onEnable).
-        val legacy = File(dataFolder, AuctionsModule.LEGACY_DIR).takeIf { it.isDirectory }
-        val folder = api.projectRoots.moduleFolder(AuctionsModule.FOLDER, AuctionsModule.ID, legacy)
+        // plugins/ArtisanAuctions/artisan_module/: menus, dialogs, texts and settings, edited in the
+        // editor. Everything the plugin stores is in its own folder. Artisan moves a former
+        // plugins/Artisan/modules/auctions/ there once. Claimed before the module registers its
+        // files there (AuctionsModule.onEnable).
+        val moduleDir = File(dataFolder, AuctionsModule.MODULE_DIR)
+        adoptEditorFolder(moduleDir)
+        val folder = api.projectRoots.pluginFolder(AuctionsModule.FOLDER, AuctionsModule.ID, moduleDir)
         if (ModuleFiles.writeModuleFile(folder)) {
             api.project.reload()
             logger.info("Module file written to ${folder.path}")
@@ -95,12 +98,30 @@ class AuctionsPlugin : JavaPlugin() {
         return generated
     }
 
+    /**
+     * The first versions kept the module's files in `plugins/ArtisanAuctions/editor/`: renamed to
+     * `artisan_module/` when that one does not exist and Artisan holds no `modules/auctions/` to
+     * move there (it would then be the newer copy).
+     */
+    private fun adoptEditorFolder(moduleDir: File) {
+        val editor = File(dataFolder, AuctionsModule.LEGACY_DIR)
+        val inArtisan = File(dataFolder.parentFile, "Artisan/modules/${AuctionsModule.FOLDER}")
+        if (!editor.isDirectory || moduleDir.exists() || inArtisan.exists()) return
+        try {
+            java.nio.file.Files.move(editor.toPath(), moduleDir.toPath())
+            logger.info("Moved ${editor.path} to ${moduleDir.path}.")
+        } catch (e: java.io.IOException) {
+            logger.severe("Cannot move ${editor.path} to ${moduleDir.path}, move it by hand: ${e.message}")
+        }
+    }
+
     companion object {
         /**
-         * `project.read` of either YAML extension, system templates, text without Adventure,
-         * table prefix, module folders, player commands.
+         * 1.1.0 for `ProjectRootRegistry.pluginFolder` (the module's files in this plugin's own
+         * folder). From 1.0.0: `project.read` of either YAML extension, system templates, text
+         * without Adventure, table prefix, player commands.
          */
-        const val MIN_CORE_API = "1.0.0"
+        const val MIN_CORE_API = "1.1.0"
         /** Ends due listings every 5 s. */
         const val EXPIRY_TICKS = 100L
         /** Purges claims past their retention every hour. */

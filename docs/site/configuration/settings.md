@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-The rules live in `plugins/Artisan/modules/auctions/data/config.yaml`. Edit them in the editor's
+The rules live in `plugins/ArtisanAuctions/artisan_module/data/config.yaml`. Edit them in the editor's
 **Auctions settings** screen, or by hand. Durations are written like `90s`, `15m`, `48h`, `30d`.
 
 ## Default file

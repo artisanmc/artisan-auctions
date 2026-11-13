@@ -22,7 +22,7 @@ the storage.
 |---|---|
 | Server | Paper or Spigot 1.21+. Folia is not supported. |
 | Java | 21 |
-| Artisan | 1.0.0 or later |
+| Artisan | API 1.1.0 or later |
 | Economy | [Vault](https://www.spigotmc.org/resources/vault.34315/) with an economy plugin, or a currency another plugin registers |
 
 ## Next

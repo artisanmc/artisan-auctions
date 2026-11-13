@@ -16,12 +16,16 @@ Add Vault and an economy plugin if you sell for in-game money.
 
 ## 2. Start the server
 
-On first start the plugin creates two folders:
+On first start the plugin creates its folder, `plugins/ArtisanAuctions/`:
 
-| Folder | Content | Edited from |
+| Path | Content | Edited from |
 |---|---|---|
-| `plugins/Artisan/modules/auctions/` | Rules (`data/config.yml`), menus, dialogs, texts (`lang/`) | The Artisan editor |
-| `plugins/ArtisanAuctions/` | `config.yml`: this server's id in a shared database | A text editor |
+| `artisan_module/` | Rules (`data/config.yml`), menus, dialogs, texts (`lang/`) | The Artisan editor |
+| `config.yml` | This server's id in a shared database | A text editor |
+
+Everything the plugin stores on disk is in that folder: copy it to move the module to another
+server. A server updated from an earlier version had `artisan_module/` in
+`plugins/Artisan/modules/auctions/`: Artisan moves it once at startup.
 
 Artisan keeps the module's menus, dialogs, texts and settings in that folder: a file you delete
 is written again on the next start, a file you never edited follows each new version of the

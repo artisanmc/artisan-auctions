@@ -29,7 +29,7 @@ sidebar:
 ## Rename or restrict `/ah`
 
 `/ah` is declared to Artisan as `auctions:ah`. Artisan writes it as a command file of the module's
-folder, `plugins/Artisan/modules/auctions/commands/ah.yaml`, whose actions call the module's code
+folder, `plugins/ArtisanAuctions/artisan_module/commands/ah.yaml`, whose actions call the module's code
 (`module_command: auctions:ah`) and whose `subcommands` are `/ah sell`, `/ah admin reindex` and the
 rest. To rename it, add aliases, a cooldown or conditions, edit it in the editor (the folder's
 commands) or in that file. While the file is untouched, each new version of the module replaces
