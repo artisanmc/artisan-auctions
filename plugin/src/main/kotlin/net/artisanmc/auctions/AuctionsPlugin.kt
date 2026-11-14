@@ -95,10 +95,12 @@ class AuctionsPlugin : JavaPlugin() {
 
     companion object {
         /**
-         * `project.read` of either YAML extension (2.15.0); system templates since 2.12.0, table
-         * prefix since 2.9.0, module folders since 2.8.0, player commands since 2.7.0.
+         * Artisan's API restarted at 1.0.0 (2026-11-02), which holds everything this plugin uses:
+         * `project.read` of either YAML extension, system templates, the table prefix, module
+         * folders and player commands (2.7.0 to 2.15.0 before the renumbering). A core 1.x refuses
+         * a minimum of 2.x, so the old value no longer loaded.
          */
-        const val MIN_CORE_API = "2.15.0"
+        const val MIN_CORE_API = "1.0.0"
         /** Ends due listings every 5 s. */
         const val EXPIRY_TICKS = 100L
         /** Purges claims past their retention every hour. */
