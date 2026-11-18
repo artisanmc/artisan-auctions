@@ -9,3 +9,4 @@ run/
 e2e/work/
 e2e/bot/node_modules/
 e2e/bot/package-lock.json
+editor/node_modules/

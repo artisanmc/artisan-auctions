@@ -1,15 +1,15 @@
 schema: dialog/v1
-title: { en: "Search the house", fr: "Rechercher dans l'hôtel" }
+title: { en: "Search the house", fr: "Rechercher dans l'hôtel", de: "Auktionshaus durchsuchen", es: "Buscar en la casa" }
 can_close_with_escape: true
 body:
-  - { type: text, text: { en: "Part of an item name, a material or a seller.", fr: "Une partie du nom d'un objet, d'un matériau ou d'un vendeur." } }
+  - { type: text, text: { en: "Part of an item name, a material or a seller.", fr: "Une partie du nom d'un objet, d'un matériau ou d'un vendeur.", de: "Teil eines Gegenstandsnamens, ein Material oder ein Verkäufer.", es: "Parte del nombre de un objeto, un material o un vendedor." } }
 inputs:
-  - { id: query, type: text, label: { en: "Search", fr: "Recherche" }, default: "", max_length: 32 }
+  - { id: query, type: text, label: { en: "Search", fr: "Recherche", de: "Suche", es: "Búsqueda" }, default: "", max_length: 32 }
 buttons:
   - id: search
-    label: { en: "<green>Search", fr: "<green>Rechercher" }
+    label: { en: "<green>Search", fr: "<green>Rechercher", de: "<green>Suchen", es: "<green>Buscar" }
     actions:
       - open_menu: { menu_id: ah_main, context: { search: "{query}" } }
   - id: cancel
-    label: { en: "Cancel", fr: "Annuler" }
+    label: { en: "Cancel", fr: "Annuler", de: "Abbrechen", es: "Cancelar" }
     actions: [ open_previous_menu ]

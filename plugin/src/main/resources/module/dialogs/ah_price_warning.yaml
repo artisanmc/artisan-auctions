@@ -1,15 +1,15 @@
 schema: dialog/v1
-title: { en: "Check the price", fr: "Vérifiez le prix" }
+title: { en: "Check the price", fr: "Vérifiez le prix", de: "Preis prüfen", es: "Revisa el precio" }
 can_close_with_escape: true
 body:
-  - { type: text, text: { en: "<white>{quantity}× {item_name}<reset> for <gold>{price}<reset> (<gold>{unit_price}<reset> each).", fr: "<white>{quantity}× {item_name}<reset> pour <gold>{price}<reset> (<gold>{unit_price}<reset> l'unité)." } }
-  - { type: text, text: { en: "The median is <gold>{median}<reset> each over {median_sales} sales: your price is <yellow>{ratio}<reset>.", fr: "La médiane est de <gold>{median}<reset> l'unité sur {median_sales} ventes : votre prix est à <yellow>{ratio}<reset>." } }
+  - { type: text, text: { en: "<white>{quantity}× {item_name}<reset> for <gold>{price}<reset> (<gold>{unit_price}<reset> each).", fr: "<white>{quantity}× {item_name}<reset> pour <gold>{price}<reset> (<gold>{unit_price}<reset> l'unité).", de: "<white>{quantity}× {item_name}<reset> für <gold>{price}<reset> (<gold>{unit_price}<reset> pro Stück).", es: "<white>{quantity}× {item_name}<reset> por <gold>{price}<reset> (<gold>{unit_price}<reset> por unidad)." } }
+  - { type: text, text: { en: "The median is <gold>{median}<reset> each over {median_sales} sales: your price is <yellow>{ratio}<reset>.", fr: "La médiane est de <gold>{median}<reset> l'unité sur {median_sales} ventes : votre prix est à <yellow>{ratio}<reset>.", de: "Der Median liegt bei <gold>{median}<reset> pro Stück über {median_sales} Verkäufe: dein Preis liegt bei <yellow>{ratio}<reset>.", es: "La mediana es <gold>{median}<reset> por unidad en {median_sales} ventas: tu precio está en <yellow>{ratio}<reset>." } }
 buttons:
   - id: confirm
-    label: { en: "<yellow>List it anyway", fr: "<yellow>Mettre en vente quand même" }
+    label: { en: "<yellow>List it anyway", fr: "<yellow>Mettre en vente quand même", de: "<yellow>Trotzdem einstellen", es: "<yellow>Publicarlo de todos modos" }
     actions:
       - run_command: "auctions:sell_confirm"
       - open_menu: ah_main
   - id: cancel
-    label: { en: "Cancel", fr: "Annuler" }
+    label: { en: "Cancel", fr: "Annuler", de: "Abbrechen", es: "Cancelar" }
     actions: [ close_dialog ]

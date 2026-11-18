@@ -23,7 +23,7 @@ You get a working auction house in four steps.
 | Path | What |
 |---|---|
 | `plugins/ArtisanAuctions/config.yml` | This server's id in the shared database ([config.yml](../configuration/config-yml/)) |
-| `plugins/ArtisanAuctions/artisan_module/originals/` | The module's files as shipped, written by Artisan at each start: `data/config.yml` (the rules, see [Settings](../configuration/settings/)), `menus/` (`ah_main`, `ah_mine`, `ah_lot`, `ah_claims`), `dialogs/` (sell, bid, search, confirm, price warning), `lang/` (`en.yml`, `fr.yml`), `commands/ah.yml` |
+| `plugins/ArtisanAuctions/artisan_module/originals/` | The module's files as shipped, written by Artisan at each start: `data/config.yml` (the rules, see [Settings](../configuration/settings/)), `menus/` (`ah_main`, `ah_mine`, `ah_lot`, `ah_claims`), `dialogs/` (sell, bid, search, confirm, price warning), `lang/` (`en.yaml`, `fr.yaml`, `de.yaml`, `es.yaml`), `commands/ah.yml` |
 | Tables `artisan_auctions_*` | Listings, claims, payments, sales history |
 
 You never edit `originals/`. When you change a file in the editor (or copy one out of `originals/` to

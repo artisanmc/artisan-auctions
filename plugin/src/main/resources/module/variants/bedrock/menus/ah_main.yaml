@@ -4,7 +4,7 @@ schema: menu/v1
 # bid, buy an auction now, or see the lot's contents. 'mode' is a menu arg it sets, not an input.
 title:
   - kind: plain
-    value: {en: "<dark_gray>Auction House", fr: "<dark_gray>Hôtel des ventes"}
+    value: {en: "<dark_gray>Auction House", fr: "<dark_gray>Hôtel des ventes", de: "<dark_gray>Auktionshaus", es: "<dark_gray>Casa de subastas"}
 size: 54
 inputs:
   - {name: tab, type: string, default: "all"}
@@ -36,6 +36,8 @@ elements:
     title:
       en: "<yellow>Show: <white>{tab == \"all\" ? \"All listings\" : \"\"}{tab == \"sale\" ? \"Fixed price\" : \"\"}{tab == \"auction\" ? \"Auctions\" : \"\"}"
       fr: "<yellow>Afficher : <white>{tab == \"all\" ? \"Toutes les annonces\" : \"\"}{tab == \"sale\" ? \"Prix fixe\" : \"\"}{tab == \"auction\" ? \"Enchères\" : \"\"}"
+      de: "<yellow>Anzeigen: <white>{tab == \"all\" ? \"Alle Angebote\" : \"\"}{tab == \"sale\" ? \"Festpreis\" : \"\"}{tab == \"auction\" ? \"Auktionen\" : \"\"}"
+      es: "<yellow>Mostrar: <white>{tab == \"all\" ? \"Todos los anuncios\" : \"\"}{tab == \"sale\" ? \"Precio fijo\" : \"\"}{tab == \"auction\" ? \"Subastas\" : \"\"}"
     lore:
       en:
         - "{tab == \"all\" ? \"<green>▸ \" : \"<gray>  \"}All listings"
@@ -49,6 +51,18 @@ elements:
         - "{tab == \"auction\" ? \"<green>▸ \" : \"<gray>  \"}Enchères"
         - ""
         - "<gray>Toucher : filtre suivant"
+      de:
+        - "{tab == \"all\" ? \"<green>▸ \" : \"<gray>  \"}Alle Angebote"
+        - "{tab == \"sale\" ? \"<green>▸ \" : \"<gray>  \"}Festpreis"
+        - "{tab == \"auction\" ? \"<green>▸ \" : \"<gray>  \"}Auktionen"
+        - ""
+        - "<gray>Tippen: nächster Filter"
+      es:
+        - "{tab == \"all\" ? \"<green>▸ \" : \"<gray>  \"}Todos los anuncios"
+        - "{tab == \"sale\" ? \"<green>▸ \" : \"<gray>  \"}Precio fijo"
+        - "{tab == \"auction\" ? \"<green>▸ \" : \"<gray>  \"}Subastas"
+        - ""
+        - "<gray>Toca: filtro siguiente"
     click:
       left: [set_arg_cycle_next: {arg: tab, list: "all,sale,auction"}]
     states:
@@ -59,24 +73,32 @@ elements:
   - id: search
     positions: 5
     material: NAME_TAG
-    title: {en: "<yellow>Search", fr: "<yellow>Rechercher"}
+    title: {en: "<yellow>Search", fr: "<yellow>Rechercher", de: "<yellow>Suchen", es: "<yellow>Buscar"}
     lore:
       en:
         - '<gray>Tap: search by item or seller'
       fr:
         - '<gray>Toucher : chercher un objet ou un vendeur'
+      de:
+        - "<gray>Tippen: nach Gegenstand oder Verkäufer suchen"
+      es:
+        - "<gray>Toca: buscar por objeto o vendedor"
     click:
       left: [open_dialog: ah_search]
     states:
       - if: [expression: "search != \"\""]
         material: NAME_TAG
         enchanted: true
-        title: {en: "<yellow>Search: <white>{search}", fr: "<yellow>Recherche : <white>{search}"}
+        title: {en: "<yellow>Search: <white>{search}", fr: "<yellow>Recherche : <white>{search}", de: "<yellow>Suche: <white>{search}", es: "<yellow>Búsqueda: <white>{search}"}
         lore:
           en:
             - '<gray>Tap: new search'
           fr:
             - '<gray>Toucher : nouvelle recherche'
+          de:
+            - "<gray>Tippen: neue Suche"
+          es:
+            - "<gray>Toca: nueva búsqueda"
         click:
           left: [open_dialog: ah_search]
 
@@ -87,48 +109,64 @@ elements:
     states:
       - if: [expression: "search != \"\""]
         material: BARRIER
-        title: {en: "<red>Clear the search", fr: "<red>Effacer la recherche"}
+        title: {en: "<red>Clear the search", fr: "<red>Effacer la recherche", de: "<red>Suche löschen", es: "<red>Borrar la búsqueda"}
         click: {left: [set_arg: {arg: search, value: ""}]}
   - id: sort
     positions: 8
     material: HOPPER
-    title: {en: "<yellow>Sort: <white>newest", fr: "<yellow>Tri : <white>plus récentes"}
+    title: {en: "<yellow>Sort: <white>newest", fr: "<yellow>Tri : <white>plus récentes", de: "<yellow>Sortierung: <white>neueste", es: "<yellow>Orden: <white>más recientes"}
     lore:
       en:
         - '<gray>Tap: next order'
       fr:
         - '<gray>Toucher : ordre suivant'
+      de:
+        - "<gray>Tippen: nächste Sortierung"
+      es:
+        - "<gray>Toca: orden siguiente"
     click:
       left: [set_arg_cycle_next: {arg: sort, list: "newest,price_asc,price_desc,ending"}]
     states:
       - if: [expression: "sort == \"price_asc\""]
         material: HOPPER
-        title: {en: "<yellow>Sort: <white>cheapest", fr: "<yellow>Tri : <white>moins chères"}
+        title: {en: "<yellow>Sort: <white>cheapest", fr: "<yellow>Tri : <white>moins chères", de: "<yellow>Sortierung: <white>günstigste", es: "<yellow>Orden: <white>más baratos"}
         lore:
           en:
             - '<gray>Tap: next order'
           fr:
             - '<gray>Toucher : ordre suivant'
+          de:
+            - "<gray>Tippen: nächste Sortierung"
+          es:
+            - "<gray>Toca: orden siguiente"
         click:
           left: [set_arg_cycle_next: {arg: sort, list: "newest,price_asc,price_desc,ending"}]
       - if: [expression: "sort == \"price_desc\""]
         material: HOPPER
-        title: {en: "<yellow>Sort: <white>most expensive", fr: "<yellow>Tri : <white>plus chères"}
+        title: {en: "<yellow>Sort: <white>most expensive", fr: "<yellow>Tri : <white>plus chères", de: "<yellow>Sortierung: <white>teuerste", es: "<yellow>Orden: <white>más caros"}
         lore:
           en:
             - '<gray>Tap: next order'
           fr:
             - '<gray>Toucher : ordre suivant'
+          de:
+            - "<gray>Tippen: nächste Sortierung"
+          es:
+            - "<gray>Toca: orden siguiente"
         click:
           left: [set_arg_cycle_next: {arg: sort, list: "newest,price_asc,price_desc,ending"}]
       - if: [expression: "sort == \"ending\""]
         material: HOPPER
-        title: {en: "<yellow>Sort: <white>ending soon", fr: "<yellow>Tri : <white>bientôt finies"}
+        title: {en: "<yellow>Sort: <white>ending soon", fr: "<yellow>Tri : <white>bientôt finies", de: "<yellow>Sortierung: <white>endet bald", es: "<yellow>Orden: <white>terminan pronto"}
         lore:
           en:
             - '<gray>Tap: next order'
           fr:
             - '<gray>Toucher : ordre suivant'
+          de:
+            - "<gray>Tippen: nächste Sortierung"
+          es:
+            - "<gray>Toca: orden siguiente"
         click:
           left: [set_arg_cycle_next: {arg: sort, list: "newest,price_asc,price_desc,ending"}]
 
@@ -156,6 +194,24 @@ elements:
         - "{l.has_median ? \"<gray>Médiane : <white>\" : \"\"}{l.has_median ? l.median_display : \"\"}{l.has_median ? \" <gray>l'unité (\" : \"\"}{l.has_median ? l.median_ratio_display : \"\"}{l.has_median ? \"<gray>)\" : \"\"}"
         - ""
         - "<yellow>Toucher pour acheter"
+      de:
+        - "<green>Festpreis"
+        - ""
+        - "<gray>Preis: <gold>{l.price_display}"
+        - "<gray>Verkäufer: <white>{l.seller}"
+        - "<gray>Endet in: <white>{l.ends_at.until()}"
+        - "{l.has_median ? \"<gray>Median: <white>\" : \"\"}{l.has_median ? l.median_display : \"\"}{l.has_median ? \" <gray>pro Stück (\" : \"\"}{l.has_median ? l.median_ratio_display : \"\"}{l.has_median ? \"<gray>)\" : \"\"}"
+        - ""
+        - "<yellow>Tippen zum Kaufen"
+      es:
+        - "<green>Precio fijo"
+        - ""
+        - "<gray>Precio: <gold>{l.price_display}"
+        - "<gray>Vendedor: <white>{l.seller}"
+        - "<gray>Termina en: <white>{l.ends_at.until()}"
+        - "{l.has_median ? \"<gray>Mediana: <white>\" : \"\"}{l.has_median ? l.median_display : \"\"}{l.has_median ? \" <gray>por unidad (\" : \"\"}{l.has_median ? l.median_ratio_display : \"\"}{l.has_median ? \"<gray>)\" : \"\"}"
+        - ""
+        - "<yellow>Toca para comprar"
     click:
       left:
         - open_dialog: {dialog_id: ah_confirm_buy, context: {id: "{l.id}", name: "{l.name}", price: "{l.price_display}", seller: "{l.seller}", quantity: "{l.quantity}"}}
@@ -172,6 +228,14 @@ elements:
             - "<gray>Vendeur : <white>{l.seller}"
             - ""
             - "<yellow>Toucher pour voir le contenu du lot"
+          de:
+            - "<gray>Verkäufer: <white>{l.seller}"
+            - ""
+            - "<yellow>Tippen, um den Inhalt des Loses zu sehen"
+          es:
+            - "<gray>Vendedor: <white>{l.seller}"
+            - ""
+            - "<yellow>Toca para ver el contenido del lote"
         click:
           left:
             - open_menu: {menu_id: ah_lot, context: {id: "{l.id}"}}
@@ -196,6 +260,22 @@ elements:
             - "<gray>Fin dans : <white>{l.ends_at.until()}"
             - ""
             - "<yellow>Toucher pour acheter tout de suite"
+          de:
+            - "<gold>Auktion"
+            - ""
+            - "<gray>Sofortkauf: <gold>{l.buy_now_display}"
+            - "<gray>Verkäufer: <white>{l.seller}"
+            - "<gray>Endet in: <white>{l.ends_at.until()}"
+            - ""
+            - "<yellow>Tippen zum Sofortkauf"
+          es:
+            - "<gold>Subasta"
+            - ""
+            - "<gray>Compra inmediata: <gold>{l.buy_now_display}"
+            - "<gray>Vendedor: <white>{l.seller}"
+            - "<gray>Termina en: <white>{l.ends_at.until()}"
+            - ""
+            - "<yellow>Toca para comprar ya"
         click:
           left:
             - open_dialog: {dialog_id: ah_confirm_buy, context: {id: "{l.id}", name: "{l.name}", price: "{l.buy_now_display}", seller: "{l.seller}", quantity: "{l.quantity}"}}
@@ -222,6 +302,26 @@ elements:
             - ""
             - "<aqua>Votre annonce"
             - "<red>Toucher pour la retirer"
+          de:
+            - "{l.is_auction ? \"<gold>Auktion\" : \"<green>Festpreis\"}"
+            - ""
+            - "<gray>{l.is_auction ? \"Startgebot\" : \"Preis\"}: <gold>{l.is_auction ? l.start_price_display : l.price_display}"
+            - "{l.is_auction ? \"<gray>Gebote: <white>\" : \"\"}{l.is_auction ? l.bid_count : \"\"}{l.has_bids ? \" <dark_gray>· <gray>höchstes: <gold>\" : \"\"}{l.has_bids ? l.current_bid_display : \"\"}"
+            - "<gray>Endet in: <white>{l.ends_at.until()}"
+            - "{l.has_median ? \"<gray>Median: <white>\" : \"\"}{l.has_median ? l.median_display : \"\"}{l.has_median ? \" <gray>pro Stück (\" : \"\"}{l.has_median ? l.median_ratio_display : \"\"}{l.has_median ? \"<gray>)\" : \"\"}"
+            - ""
+            - "<aqua>Dein Angebot"
+            - "<red>Tippen zum Zurückziehen"
+          es:
+            - "{l.is_auction ? \"<gold>Subasta\" : \"<green>Precio fijo\"}"
+            - ""
+            - "<gray>{l.is_auction ? \"Puja inicial\" : \"Precio\"}: <gold>{l.is_auction ? l.start_price_display : l.price_display}"
+            - "{l.is_auction ? \"<gray>Pujas: <white>\" : \"\"}{l.is_auction ? l.bid_count : \"\"}{l.has_bids ? \" <dark_gray>· <gray>mejor: <gold>\" : \"\"}{l.has_bids ? l.current_bid_display : \"\"}"
+            - "<gray>Termina en: <white>{l.ends_at.until()}"
+            - "{l.has_median ? \"<gray>Mediana: <white>\" : \"\"}{l.has_median ? l.median_display : \"\"}{l.has_median ? \" <gray>por unidad (\" : \"\"}{l.has_median ? l.median_ratio_display : \"\"}{l.has_median ? \"<gray>)\" : \"\"}"
+            - ""
+            - "<aqua>Tu anuncio"
+            - "<red>Toca para retirarlo"
         click:
           left:
             - run_command: "auctions:cancel {l.id}"
@@ -252,6 +352,30 @@ elements:
             - ""
             - "{l.leading ? \"<green>Vous avez la meilleure offre\" : \"<yellow>Toucher pour enchérir\"}"
             - "{l.buy_now ? \"<gray>Achat immédiat à \" : \"\"}{l.buy_now ? l.buy_now_display : \"\"}{l.buy_now ? \"<gray> : changer le mode ci-dessous\" : \"\"}"
+          de:
+            - "<gold>Auktion"
+            - ""
+            - "<gray>Startgebot: <gold>{l.start_price_display}"
+            - "<gray>Gebote: <white>{l.bid_count} <dark_gray>· <gray>höchstes: <gold>{l.has_bids ? l.current_bid_display : \"-\"}"
+            - "<gray>Nächstes Gebot ab: <yellow>{l.min_bid_display}"
+            - "<gray>Verkäufer: <white>{l.seller}"
+            - "<gray>Endet in: <white>{l.ends_at.until()}"
+            - "{l.has_median ? \"<gray>Median: <white>\" : \"\"}{l.has_median ? l.median_display : \"\"}{l.has_median ? \" <gray>pro Stück (\" : \"\"}{l.has_median ? l.median_ratio_display : \"\"}{l.has_median ? \"<gray>)\" : \"\"}"
+            - ""
+            - "{l.leading ? \"<green>Du hast das höchste Gebot\" : \"<yellow>Tippen zum Bieten\"}"
+            - "{l.buy_now ? \"<gray>Sofortkauf für \" : \"\"}{l.buy_now ? l.buy_now_display : \"\"}{l.buy_now ? \"<gray>: Tippmodus unten ändern\" : \"\"}"
+          es:
+            - "<gold>Subasta"
+            - ""
+            - "<gray>Puja inicial: <gold>{l.start_price_display}"
+            - "<gray>Pujas: <white>{l.bid_count} <dark_gray>· <gray>mejor: <gold>{l.has_bids ? l.current_bid_display : \"-\"}"
+            - "<gray>Próxima puja desde: <yellow>{l.min_bid_display}"
+            - "<gray>Vendedor: <white>{l.seller}"
+            - "<gray>Termina en: <white>{l.ends_at.until()}"
+            - "{l.has_median ? \"<gray>Mediana: <white>\" : \"\"}{l.has_median ? l.median_display : \"\"}{l.has_median ? \" <gray>por unidad (\" : \"\"}{l.has_median ? l.median_ratio_display : \"\"}{l.has_median ? \"<gray>)\" : \"\"}"
+            - ""
+            - "{l.leading ? \"<green>Tienes la mejor puja\" : \"<yellow>Toca para pujar\"}"
+            - "{l.buy_now ? \"<gray>Compra inmediata por \" : \"\"}{l.buy_now ? l.buy_now_display : \"\"}{l.buy_now ? \"<gray>: cambia el modo de toque abajo\" : \"\"}"
         click:
           left:
             - open_dialog: {dialog_id: ah_bid, context: {id: "{l.id}", name: "{l.name}", min_bid: "{l.min_bid}", min_bid_display: "{l.min_bid_display}", seller: "{l.seller}"}}
@@ -262,48 +386,60 @@ elements:
     states:
       - if: [expression: "has_previous_menu"]
         material: ARROW
-        title: {en: "<white>Back", fr: "<white>Retour"}
+        title: {en: "<white>Back", fr: "<white>Retour", de: "<white>Zurück", es: "<white>Volver"}
         click: {left: [open_previous_menu]}
   - id: mine
     positions: 46
     material: CHEST
-    title: {en: "<yellow>My listings <gray>({summary[0].mine}/{summary[0].limit})", fr: "<yellow>Mes annonces <gray>({summary[0].mine}/{summary[0].limit})"}
+    title: {en: "<yellow>My listings <gray>({summary[0].mine}/{summary[0].limit})", fr: "<yellow>Mes annonces <gray>({summary[0].mine}/{summary[0].limit})", de: "<yellow>Meine Angebote <gray>({summary[0].mine}/{summary[0].limit})", es: "<yellow>Mis anuncios <gray>({summary[0].mine}/{summary[0].limit})"}
     click: {left: [open_menu: ah_mine]}
   - id: mode
     positions: 47
     material: EMERALD
-    title: {en: "<yellow>A tap: <white>buy or bid", fr: "<yellow>Un toucher : <white>acheter ou enchérir"}
+    title: {en: "<yellow>A tap: <white>buy or bid", fr: "<yellow>Un toucher : <white>acheter ou enchérir", de: "<yellow>Tippen: <white>kaufen oder bieten", es: "<yellow>Un toque: <white>comprar o pujar"}
     lore:
       en:
         - "<gray>Tap to change what a tap on a listing does"
       fr:
         - "<gray>Toucher pour changer l'effet d'un toucher sur une annonce"
+      de:
+        - "<gray>Tippen, um zu ändern, was Tippen auf ein Angebot bewirkt"
+      es:
+        - "<gray>Toca para cambiar lo que hace un toque en un anuncio"
     click: {left: [set_arg_cycle_next: {arg: mode, list: "view,buy_now,act"}]}
     states:
       - if:
           - placeholder_equals: {placeholder: "{mode}", value: "view"}
         material: SPYGLASS
-        title: {en: "<yellow>A tap: <white>see the lot's contents", fr: "<yellow>Un toucher : <white>voir le contenu du lot"}
+        title: {en: "<yellow>A tap: <white>see the lot's contents", fr: "<yellow>Un toucher : <white>voir le contenu du lot", de: "<yellow>Tippen: <white>Inhalt des Loses sehen", es: "<yellow>Un toque: <white>ver el contenido del lote"}
         lore:
           en:
             - "<gray>Tap to change what a tap on a listing does"
           fr:
             - "<gray>Toucher pour changer l'effet d'un toucher sur une annonce"
+          de:
+            - "<gray>Tippen, um zu ändern, was Tippen auf ein Angebot bewirkt"
+          es:
+            - "<gray>Toca para cambiar lo que hace un toque en un anuncio"
         click: {left: [set_arg_cycle_next: {arg: mode, list: "view,buy_now,act"}]}
       - if:
           - placeholder_equals: {placeholder: "{mode}", value: "buy_now"}
         material: DIAMOND
-        title: {en: "<yellow>A tap: <white>buy an auction now", fr: "<yellow>Un toucher : <white>achat immédiat d'une enchère"}
+        title: {en: "<yellow>A tap: <white>buy an auction now", fr: "<yellow>Un toucher : <white>achat immédiat d'une enchère", de: "<yellow>Tippen: <white>Auktion sofort kaufen", es: "<yellow>Un toque: <white>comprar ya una subasta"}
         lore:
           en:
             - "<gray>Tap to change what a tap on a listing does"
           fr:
             - "<gray>Toucher pour changer l'effet d'un toucher sur une annonce"
+          de:
+            - "<gray>Tippen, um zu ändern, was Tippen auf ein Angebot bewirkt"
+          es:
+            - "<gray>Toca para cambiar lo que hace un toque en un anuncio"
         click: {left: [set_arg_cycle_next: {arg: mode, list: "view,buy_now,act"}]}
   - id: prev
     positions: 48
     material: ARROW
-    title: {en: "<white>Previous page", fr: "<white>Page précédente"}
+    title: {en: "<white>Previous page", fr: "<white>Page précédente", de: "<white>Vorherige Seite", es: "<white>Página anterior"}
     click: {left: [pagination_prev: grid]}
     states:
       - if: [pagination_at_first: grid]
@@ -312,21 +448,25 @@ elements:
   - id: sell
     positions: 49
     material: GOLD_INGOT
-    title: {en: "<green>Sell the item in your hand", fr: "<green>Vendre l'objet en main"}
+    title: {en: "<green>Sell the item in your hand", fr: "<green>Vendre l'objet en main", de: "<green>Gegenstand in der Hand verkaufen", es: "<green>Vender el objeto de tu mano"}
     lore:
       en:
         - "<gray>Hold the item, then click"
       fr:
         - "<gray>Tenez l'objet, puis cliquez"
+      de:
+        - "<gray>Halte den Gegenstand, dann klicke"
+      es:
+        - "<gray>Sujeta el objeto y haz clic"
     click: {left: [run_command: "auctions:sell_start"]}
     states:
       - if: [expression: "settings[0].read_only"]
         material: BARRIER
-        title: {en: "<red>The house takes no new listings", fr: "<red>L'hôtel n'accepte plus d'annonces"}
+        title: {en: "<red>The house takes no new listings", fr: "<red>L'hôtel n'accepte plus d'annonces", de: "<red>Das Auktionshaus nimmt keine neuen Angebote an", es: "<red>La casa no acepta anuncios nuevos"}
   - id: next
     positions: 50
     material: ARROW
-    title: {en: "<white>Next page", fr: "<white>Page suivante"}
+    title: {en: "<white>Next page", fr: "<white>Page suivante", de: "<white>Nächste Seite", es: "<white>Página siguiente"}
     click: {left: [pagination_next: grid]}
     states:
       - if: [pagination_at_last: grid]
@@ -335,26 +475,34 @@ elements:
   - id: claims
     positions: 52
     material: ENDER_CHEST
-    title: {en: "<yellow>Claims box <gray>({summary[0].claims})", fr: "<yellow>Récupération <gray>({summary[0].claims})"}
+    title: {en: "<yellow>Claims box <gray>({summary[0].claims})", fr: "<yellow>Récupération <gray>({summary[0].claims})", de: "<yellow>Abholfach <gray>({summary[0].claims})", es: "<yellow>Buzón de recogida <gray>({summary[0].claims})"}
     lore:
       en:
         - "<gray>Bought, unsold and returned items"
       fr:
         - "<gray>Achats, invendus et objets rendus"
+      de:
+        - "<gray>Gekaufte, unverkaufte und zurückgegebene Gegenstände"
+      es:
+        - "<gray>Objetos comprados, sin vender y devueltos"
     click: {left: [open_menu: ah_claims]}
     states:
       - if: [expression: "summary[0].claims > 0"]
         material: ENDER_CHEST
         enchanted: true
-        title: {en: "<gold>Claims box <gray>({summary[0].claims})", fr: "<gold>Récupération <gray>({summary[0].claims})"}
+        title: {en: "<gold>Claims box <gray>({summary[0].claims})", fr: "<gold>Récupération <gray>({summary[0].claims})", de: "<gold>Abholfach <gray>({summary[0].claims})", es: "<gold>Buzón de recogida <gray>({summary[0].claims})"}
         lore:
           en:
             - "<gray>Bought, unsold and returned items"
           fr:
             - "<gray>Achats, invendus et objets rendus"
+          de:
+            - "<gray>Gekaufte, unverkaufte und zurückgegebene Gegenstände"
+          es:
+            - "<gray>Objetos comprados, sin vender y devueltos"
         click: {left: [open_menu: ah_claims]}
   - id: close
     positions: 53
     material: BARRIER
-    title: {en: "<red>Close", fr: "<red>Fermer"}
+    title: {en: "<red>Close", fr: "<red>Fermer", de: "<red>Schließen", es: "<red>Cerrar"}
     click: {left: [close_menu]}

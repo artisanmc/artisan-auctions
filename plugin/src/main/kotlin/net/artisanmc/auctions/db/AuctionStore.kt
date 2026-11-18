@@ -251,6 +251,27 @@ class AuctionStore(private val ds: DataSource, private val prefix: String) {
         }
     }
 
+    /** What waits in the claims boxes of [server]: item claims, and money per currency. */
+    fun waitingClaims(server: String): Pair<Int, Map<String, BigDecimal>> = read { c ->
+        c.prepareStatement(
+            "SELECT claim_kind, currency, COUNT(*) AS n, SUM(amount) AS total FROM ${prefix}claims " +
+                "WHERE server = ? AND claimed_at IS NULL GROUP BY claim_kind, currency",
+        ).use { s ->
+            s.setString(1, server)
+            s.executeQuery().use { rs ->
+                var items = 0
+                val money = LinkedHashMap<String, BigDecimal>()
+                while (rs.next()) {
+                    when (ClaimKind.of(rs.getString("claim_kind"))) {
+                        ClaimKind.ITEM -> items += rs.getInt("n")
+                        ClaimKind.MONEY -> rs.getString("currency")?.let { money[it] = rs.getBigDecimal("total") ?: BigDecimal.ZERO }
+                    }
+                }
+                items to money
+            }
+        }
+    }
+
     /** Unclaimed claims created before [before]; [delete] removes them. */
     fun staleClaims(server: String, before: Long): List<Claim> = read { c ->
         c.prepareStatement("SELECT * FROM ${prefix}claims WHERE server = ? AND claimed_at IS NULL AND created_at < ?").use { s ->

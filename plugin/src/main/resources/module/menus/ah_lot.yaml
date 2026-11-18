@@ -1,7 +1,7 @@
 schema: menu/v1
 title:
   - kind: plain
-    value: { en: "<dark_gray>Lot contents", fr: "<dark_gray>Contenu du lot" }
+    value: { en: "<dark_gray>Lot contents", fr: "<dark_gray>Contenu du lot", de: "<dark_gray>Inhalt des Loses", es: "<dark_gray>Contenido del lote" }
 size: 54
 inputs:
   - { name: id, type: string, default: "" }
@@ -22,10 +22,10 @@ elements:
   - id: back
     positions: 49
     material: ARROW
-    title: { en: "<white>Back", fr: "<white>Retour" }
+    title: { en: "<white>Back", fr: "<white>Retour", de: "<white>Zurück", es: "<white>Volver" }
     click: { left: [ open_previous_menu ] }
   - id: close
     positions: 53
     material: BARRIER
-    title: { en: "<red>Close", fr: "<red>Fermer" }
+    title: { en: "<red>Close", fr: "<red>Fermer", de: "<red>Schließen", es: "<red>Cerrar" }
     click: { left: [ close_menu ] }

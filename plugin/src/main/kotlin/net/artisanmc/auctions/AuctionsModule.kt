@@ -3,12 +3,14 @@ package net.artisanmc.auctions
 import net.artisanmc.auctions.config.ConfigModel
 import net.artisanmc.auctions.config.ConfigStore
 import net.artisanmc.auctions.files.ModuleFiles
+import net.artisanmc.auctions.paper.ArtisanStats
 import net.artisanmc.auctions.paper.AuctionHouse
 import net.artisanmc.auctions.paper.Currencies
 import net.artisanmc.auctions.paper.ModuleBindings
 import net.artisanmc.auctions.sources.SettingsSource
 import net.artisanmc.modules.api.ArtisanAPI
 import net.artisanmc.modules.api.ArtisanModule
+import net.artisanmc.modules.api.editor.EditorBundleDeclaration
 import net.artisanmc.modules.api.playercommand.PlayerCommandDeclaration
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -42,6 +44,7 @@ class AuctionsModule(
         loadConfig(api)
         val house = house(api)
         ModuleBindings.declare(api, house)
+        statistics(api, house)
         house.threads.main {
             started = true
             warnUnknownCurrencies()
@@ -69,6 +72,20 @@ class AuctionsModule(
             api.templates.register(ModuleFiles.template(javaClass.classLoader))
         } catch (e: RuntimeException) {
             logger.log(Level.WARNING, "[Auctions] the house's menus, dialogs and texts are not available", e)
+        }
+    }
+
+    /**
+     * The house's Stat events and the editor's Auctions tab (`editor/`, built into
+     * `artisan-editor/ui.js`), both from API [ArtisanStats.MIN_API]: an older Artisan runs the
+     * house without them.
+     */
+    private fun statistics(api: ArtisanAPI, house: AuctionHouse) {
+        house.statSink = ArtisanStats.install(api, house, logger) ?: return
+        try {
+            api.editorBundles.register(EditorBundleDeclaration.fromResource(javaClass.classLoader, EDITOR_BUNDLE, EDITOR_SDK))
+        } catch (e: RuntimeException) {
+            logger.log(Level.WARNING, "[Auctions] the editor's Auctions tab is not available", e)
         }
     }
 
@@ -103,5 +120,9 @@ class AuctionsModule(
         const val LEGACY_DIR = "editor"
         const val CONFIG_PATH = "data/config.yaml"
         const val SETTINGS_SCREEN = "auctions:settings"
+        /** The editor's Auctions tab, built by `editor/` (`npm run build`). */
+        const val EDITOR_BUNDLE = "artisan-editor/ui.js"
+        /** The editor SDK `editor/` builds against (the version `npm run build` prints). */
+        const val EDITOR_SDK = "1.23.0"
     }
 }

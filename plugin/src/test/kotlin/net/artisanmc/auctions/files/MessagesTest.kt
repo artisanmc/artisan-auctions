@@ -26,5 +26,28 @@ class MessagesTest {
 
     @Test fun `french has every message`() = assertEquals(emptySet(), used - messages("fr"))
 
-    @Test fun `languages have the same keys`() = assertEquals(messages("en"), messages("fr"))
+    @Test fun `german has every message`() = assertEquals(emptySet(), used - messages("de"))
+
+    @Test fun `spanish has every message`() = assertEquals(emptySet(), used - messages("es"))
+
+    @Test fun `languages have the same keys`() {
+        for (lang in listOf("fr", "de", "es")) assertEquals(messages("en"), messages(lang), lang)
+    }
+
+    /** Every `{ en: …, fr: … }` text of a menu or dialog speaks the four languages. */
+    @Test fun `menus and dialogs speak every language`() {
+        val missing = mutableListOf<String>()
+        fun walk(node: Any?, where: String) {
+            when (node) {
+                is Map<*, *> -> {
+                    if ("en" in node.keys && node.keys != setOf("en", "fr", "de", "es")) missing += "$where: ${node.keys}"
+                    node.forEach { (k, v) -> walk(v, "$where.$k") }
+                }
+                is List<*> -> node.forEachIndexed { i, v -> walk(v, "$where[$i]") }
+            }
+        }
+        File("src/main/resources/module").walk().filter { it.extension == "yaml" && "/lang/" !in it.invariantSeparatorsPath }
+            .forEach { walk(Yaml().load<Any?>(it.readText()), it.name) }
+        assertEquals(emptyList<String>(), missing)
+    }
 }
