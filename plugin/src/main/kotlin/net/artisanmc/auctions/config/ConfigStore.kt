@@ -17,7 +17,9 @@ class ConfigStore(private val logger: Logger) {
     /** [yaml] = the content of `data/config.yaml`, null when the file is missing. True when applied. */
     fun reload(yaml: String?): Boolean {
         if (yaml == null) {
-            logger.warning("[Auctions] data/config.yaml is missing: using the defaults")
+            // A first start reads before Artisan writes the module's files: expected, and the
+            // defaults are what the shipped file holds.
+            logger.info("[Auctions] data/config.yaml not written yet: using the defaults")
             current = AuctionsConfig()
             return true
         }

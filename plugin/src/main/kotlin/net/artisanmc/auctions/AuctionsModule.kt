@@ -30,6 +30,8 @@ class AuctionsModule(
     override fun getSchemaVersion(): String = "auctions/v1"
 
     private var api: ArtisanAPI? = null
+    /** False until the server has ticked once: a plugin enabled after this one may still register its currency. */
+    @Volatile private var started = false
 
     override fun onEnable(api: ArtisanAPI) {
         this.api = api
@@ -38,7 +40,12 @@ class AuctionsModule(
         api.screens.declare(SETTINGS_SCREEN, "Settings", CONFIG_PATH.removeSuffix(".yaml"), FOLDER)
         api.dataSources.register(SettingsSource.declaration { config.current })
         loadConfig(api)
-        ModuleBindings.declare(api, house(api))
+        val house = house(api)
+        ModuleBindings.declare(api, house)
+        house.threads.main {
+            started = true
+            warnUnknownCurrencies()
+        }
         // Here, not in the plugin's onEnable: `/ah` belongs to this module, its folder holds its
         // file, and disabling the module removes it.
         api.playerCommands.register(ahCommand())
@@ -66,7 +73,10 @@ class AuctionsModule(
     }
 
     private fun loadConfig(api: ArtisanAPI) {
-        if (!config.reload(api.project.read(FOLDER, CONFIG_PATH))) return
+        if (config.reload(readConfig(api)) && started) warnUnknownCurrencies()
+    }
+
+    private fun warnUnknownCurrencies() {
         val unknown = config.current.currencies.allowed.filterNot(currencies::has)
         if (unknown.isNotEmpty()) {
             logger.warning("[Auctions] currencies.allowed names currencies no plugin provides: " +
@@ -74,8 +84,17 @@ class AuctionsModule(
         }
     }
 
+    /**
+     * The owner's `data/config.yaml` when they edited it, else the shipped one: Artisan keeps a
+     * module's files under `originals/` and the owner's folder holds only what they changed.
+     */
+    private fun readConfig(api: ArtisanAPI): String? =
+        api.project.read(FOLDER, CONFIG_PATH) ?: api.project.read(FOLDER, ORIGINALS + CONFIG_PATH)
+
     companion object {
         const val ID = "auctions"
+        /** Where Artisan writes the files a module ships, inside its folder. */
+        const val ORIGINALS = "originals/"
         /** The folder of the module's files inside this plugin's data folder. */
         const val MODULE_DIR = "artisan_module"
         /** The module's project id, the one Artisan's API reads its files by. */
