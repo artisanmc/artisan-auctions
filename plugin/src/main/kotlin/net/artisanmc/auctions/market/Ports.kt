@@ -3,10 +3,21 @@ package net.artisanmc.auctions.market
 import java.math.BigDecimal
 import java.util.UUID
 
-/** Where work runs: the database off the main thread, money and inventories on it. */
+/**
+ * Where work runs. The market's state lives on one thread, [main]: the server's main thread on
+ * Paper and Spigot, the global region on Folia. The database runs off it ([async]), and a
+ * player's inventory is touched only on the thread that owns that player ([player]).
+ */
 interface Threads {
     fun async(task: () -> Unit)
     fun main(task: () -> Unit)
+
+    /**
+     * Runs [task] on the thread that owns [player], or [offline] on [main] when the player is not
+     * online or leaves before [task] ran. Exactly one of the two runs, so a hand-over that did
+     * not happen can always be undone.
+     */
+    fun player(player: UUID, task: () -> Unit, offline: () -> Unit)
 }
 
 /** Money of any registered currency, online or offline player. */

@@ -1,32 +1,31 @@
 ---
 title: Artisan Auctions
-description: An auction house for Paper and Spigot servers, with fixed-price sales, timed auctions, a claims box and median prices.
+description: An auction house with fixed-price sales, timed auctions, or both, edited in Artisan.
+sidebar:
+  order: 0
 ---
 
-Artisan Auctions adds an auction house to your server: players sell at a fixed price, run timed
-auctions, or both, from `/ah`. Its menus, dialogs and texts are files you restyle in the
-[Artisan](https://artisanmc.net/modules/artisan/) editor; the plugin handles the rules, the money and
-the storage.
-
-## What players get
-
-- `/ah` opens the house: browse, search, buy, bid.
-- *Sell* in the menu (or `/ah sell 250`) lists the item in hand.
-- Every listing shows the item's median price, so a player sees at a glance whether a price is fair.
-- Bought, expired and withdrawn items wait in a claims box (`/ah claim`) when they cannot be given
-  directly. Money owed to an offline seller is paid when they join.
+Artisan Auctions gives your players an auction house: they sell with `/ah`, bid on timed auctions and
+collect what they bought or won from a claims box. A median price is shown on every listing, and one
+command imports an existing zAuctionHouse.
 
 ## Requirements
 
 | | |
 |---|---|
-| Server | Paper or Spigot 1.21+. Folia is not supported. |
+| Server | Paper, Folia or Spigot 1.21 or newer |
 | Java | 21 |
-| Artisan | API 1.1.0 or later |
-| Economy | [Vault](https://www.spigotmc.org/resources/vault.34315/) with an economy plugin, or a currency another plugin registers |
+| Artisan | API 1.1.0 or newer |
+| Optional | Vault and an economy plugin, for the `vault` currency |
 
-## Next
+Artisan provides the menus, the dialogs, the editor and the database (H2, MySQL or MariaDB, set in
+`plugins/Artisan/environment.yml`).
 
-- [Install](getting-started/install/)
-- [Settings](configuration/settings/): every option of the auction house
-- [Move from zAuctionHouse](guides/move-from-zauctionhouse/)
+## Where to go next
+
+- [Install it](install/).
+- [The rules: sales, auctions, fees, median](configuration/settings/), and
+  [the local config.yml](configuration/config-yml/).
+- [Commands and permissions](commands/).
+- Worked cases: [auctions only](recipes/auctions-only/), [VIP listing limits](recipes/vip-limits/),
+  [move from zAuctionHouse](recipes/zauctionhouse-import/).

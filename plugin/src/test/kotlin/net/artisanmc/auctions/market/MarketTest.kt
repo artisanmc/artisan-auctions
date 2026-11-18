@@ -17,6 +17,11 @@ class QueueThreads : Threads {
     private val queue = ArrayDeque<() -> Unit>()
     override fun async(task: () -> Unit) { queue.addLast(task) }
     override fun main(task: () -> Unit) { queue.addLast(task) }
+    /** Players the test pretends are offline: their hand-overs fall back to `offline`. */
+    val offline = HashSet<UUID>()
+    override fun player(player: UUID, task: () -> Unit, offline: () -> Unit) {
+        queue.addLast(if (player in this.offline) offline else task)
+    }
     fun drain() { while (queue.isNotEmpty()) queue.removeFirst()() }
     fun step() { queue.removeFirstOrNull()?.invoke() }
     fun clear() { queue.clear() }
@@ -252,6 +257,21 @@ class MarketTest {
         delivery.deliverAll("srv", alice) {}
         threads.drain()
         assertEquals(listOf("blob-STONE"), giver.given[alice]?.toList())
+    }
+
+    @Test fun `a buyer who leaves before the hand-over keeps the item in the box`() {
+        val m = market()
+        val l = list(m)
+        wallets.balances[alice to "vault"] = BigDecimal(100)
+        giver.online += alice
+        // Online when the delivery starts, gone before their thread runs it.
+        threads.offline += alice
+        var out: Market.Outcome? = null
+        m.buy(alice, l.id) { out = it }
+        threads.drain()
+        assertIs<Market.Bought>(out)
+        assertNull(giver.given[alice])
+        assertEquals(listOf("blob-STONE"), store.unclaimed("srv", alice).map { it.itemBlob }, "reopened, not lost")
     }
 
     @Test fun `a sale row keeps the unit price, a mixed lot has none`() {

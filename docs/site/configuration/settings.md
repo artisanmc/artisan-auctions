@@ -1,14 +1,17 @@
 ---
-title: Settings
-description: Every option of data/config.yaml, the rules of the auction house, with defaults.
+title: Settings (config.yaml)
+description: The auction house rules, edited in the editor's Settings screen; every key, its default and its effect.
 sidebar:
   order: 1
 ---
 
-The rules live in `plugins/ArtisanAuctions/artisan_module/data/config.yaml`. Edit them in the editor's
-**Auctions settings** screen, or by hand. Durations are written like `90s`, `15m`, `48h`, `30d`.
+`data/config.yml` holds the rules players see: kinds of listing, durations, fees, currencies, forbidden
+items, the claims box and the median price. Edit it in the editor (the **auctions** folder,
+**Settings**); a publish applies it. The shipped file is
+`plugins/ArtisanAuctions/artisan_module/originals/data/config.yml`; your edited copy is
+`plugins/ArtisanAuctions/artisan_module/data/config.yml` and wins over it.
 
-## Default file
+## The shipped file
 
 ```yaml
 sales:
@@ -59,80 +62,73 @@ import:
   currency_map: {}
 ```
 
-## `sales`: fixed-price sales
+Durations are written `90s`, `15m`, `48h`, `30d`, or combined (`1h 30m`).
 
-| Key | Default | Effect |
-|---|---|---|
-| `enabled` | `true` | Players can list at a fixed price. With `auctions.enabled` too, the main menu shows a filter button that turns through all listings, sales and auctions. Both off: the house is read-only, claims still work. |
-| `duration` | `48h` | Time before an unsold item goes back to the seller's claims. |
-| `min_price`, `max_price` | `1`, `1000000000` | Price range accepted. |
+## Sales and auctions
 
-## `auctions`: timed auctions
+| Key | Type | Default | Effect |
+|---|---|---|---|
+| `sales.enabled` | boolean | `true` | Fixed-price sales. With auctions on too, the main menu shows a filter button that turns through all listings, sales and auctions; both off, the house is read-only and claims still work. |
+| `sales.duration` | duration | `48h` | Time before an unsold item goes back to the seller's claims. |
+| `sales.min_price`, `sales.max_price` | number | `1`, `1000000000` | Price bounds. |
+| `auctions.enabled` | boolean | `true` | Timed auctions. |
+| `auctions.durations` | list | `1h` … `48h` | Durations offered to the seller. |
+| `auctions.default_duration` | duration | `24h` | Must be one of `durations`. |
+| `auctions.min_increment.percent`, `.min` | number | `5`, `1` | A raise is at least this percent of the current bid, and at least `min`. |
+| `auctions.anti_snipe.window`, `.extend` | duration | `60s`, `60s` | A bid this close to the end pushes the end back by `extend`. |
+| `auctions.buyout` | boolean | `false` | Lets the seller add an optional buy-now price. |
 
-| Key | Default | Effect |
-|---|---|---|
-| `enabled` | `true` | Players can start auctions. |
-| `durations` | `[1h, 6h, 12h, 24h, 48h]` | Durations offered to the seller. |
-| `default_duration` | `24h` | Must be one of `durations`. |
-| `min_increment.percent`, `.min` | `5`, `1` | A new bid must beat the current one by this percent, and by at least `min`. |
-| `anti_snipe.window`, `.extend` | `60s`, `60s` | A bid in the last `window` pushes the end back to `extend` from now. |
-| `buyout` | `false` | Lets the seller add an optional buy-now price. |
+## Limits and fees
 
-A bid is taken from the bidder when placed and held. The bidder it replaces is paid back at once.
+| Key | Type | Default | Effect |
+|---|---|---|---|
+| `limits.max_active_listings` | integer | `10` | Per player; raised by `auctions.limit.<n>` or `auctions.limit.unlimited`. |
+| `limits.listing_fee.percent`, `.flat` | number | `0`, `0` | Taken when listing, kept. |
+| `limits.sale_tax.percent`, `.flat` | number | `5`, `0` | Taken from the seller's revenue. |
+| `limits.cancel_auction_with_bids` | boolean | `true` | The seller may cancel an auction that has bids; the bids are refunded. |
 
-## `limits`: limits and fees
+## Currencies and items
 
-| Key | Default | Effect |
-|---|---|---|
-| `max_active_listings` | `10` | Per player. Raise it per player with the permission `auctions.limit.<n>`, remove it with `auctions.limit.unlimited`. |
-| `listing_fee.percent`, `.flat` | `0`, `0` | Charged when listing, kept even if the item does not sell. |
-| `sale_tax.percent`, `.flat` | `5`, `0` | Taken from the seller's revenue on a sale. |
-| `cancel_auction_with_bids` | `true` | The seller may cancel an auction that has bids; bids are refunded. |
+| Key | Type | Default | Effect |
+|---|---|---|---|
+| `currencies.allowed` | list | `[vault]` | `vault` (Vault's economy) or the id of a currency another plugin registers. |
+| `currencies.default` | string | `vault` | Used when the seller names none. |
+| `currencies.display` | map | `vault: "{amount} $"` | How an amount is written, per currency. |
+| `items.blacklist` | list | `BEDROCK`, `BARRIER`, `COMMAND_BLOCK` | Materials that cannot be sold. |
+| `items.blacklist_lore_contains` | list | `[]` | Items whose lore contains one of these texts cannot be sold. |
 
-## `currencies`
+## Claims box
 
-| Key | Default | Effect |
-|---|---|---|
-| `allowed` | `[vault]` | `vault` (Vault's economy) or the id of a currency another plugin registers. |
-| `default` | `vault` | Currency used when the seller does not pick one. |
-| `display` | `vault: "{amount} $"` | How an amount is written, per currency. `{amount}` is replaced. |
+| Key | Type | Default | Effect |
+|---|---|---|---|
+| `claims.retention` | duration | `30d` | Unclaimed items older than this are purged, and logged with their full data. |
+| `claims.deliver_directly` | boolean | `true` | A bought item goes straight to an online buyer with room; otherwise it waits in `/ah claim`. |
 
-## `items`
+## Median price
 
-| Key | Default | Effect |
-|---|---|---|
-| `blacklist` | `[BEDROCK, BARRIER, COMMAND_BLOCK]` | Materials that cannot be listed. |
-| `blacklist_lore_contains` | `[]` | An item whose lore contains one of these texts cannot be listed. |
+| Key | Type | Default | Effect |
+|---|---|---|---|
+| `median.enabled` | boolean | `true` | Shows the median on listings and in the sell dialogs, per item and currency. |
+| `median.window.days`, `.max_sales` | integer | `14`, `100` | Sales counted. |
+| `median.min_sales` | integer | `5` | Sales needed before a median shows. |
+| `median.key` | `auto` / `vanilla` | `auto` | `auto`: custom id, then name + lore, then material. `vanilla`: material and enchantments only. |
+| `median.custom_id_keys` | list | `[]` | Item id keys besides Nexo, Oraxen and ItemsAdder, e.g. `myplugin:item_id`. |
+| `median.lore_ignore` | list of regex | `[]` | Lore lines that differ per copy (durability, owner). Run `/ah admin reindex` after a change. |
+| `median.custom_include_enchants` | boolean | `false` | Enchantments change a custom item's identity. |
+| `median.attributes` | `ignore` / `keys` / `values` | `ignore` | How item attributes count; `ignore` when they are written in the lore. |
+| `median.custom_window`, `median.custom_min_sales` | | `90` days / `50` sales, `3` | The same, for custom items. |
+| `median.include` | list | `[sale, auction]` | Listing kinds counted. |
+| `median.per_seller_cap` | integer | `3` | Sales counted per seller, so one seller cannot move the median. |
+| `median.suggest_on_sell` | boolean | `true` | Suggest the median as the price when selling. |
+| `median.warn_below`, `median.warn_above` | number | `0.5`, `3.0` | A price under or over this multiple of the median asks the seller to confirm. |
 
-## `claims`: the claims box
+## Import
 
-| Key | Default | Effect |
-|---|---|---|
-| `retention` | `30d` | Unclaimed items older than this are purged, logged with their full data. |
-| `deliver_directly` | `true` | A bought item goes straight to an online buyer who has room. |
+| Key | Type | Default | Effect |
+|---|---|---|---|
+| `import.currency_map` | map | `{}` | Source currency name to currency id here, e.g. `VAULT: vault`. Same names map themselves. |
 
-## `median`: median price
+## Texts
 
-See [Median price](../../guides/median-price/) for how items are grouped.
-
-| Key | Default | Effect |
-|---|---|---|
-| `enabled` | `true` | Shows the median on listings and in the sell dialogs. |
-| `window.days`, `.max_sales` | `14`, `100` | Sales counted: the most recent, within this many days. |
-| `min_sales` | `5` | Sales needed before a median is shown. |
-| `key` | `auto` | `auto`: custom id, then name + lore, then material. `vanilla`: material and enchantments only. |
-| `custom_id_keys` | `[]` | Extra item id keys, besides Nexo, Oraxen and ItemsAdder, e.g. `myplugin:item_id`. |
-| `lore_ignore` | `[]` | Regexes of lore lines that differ between copies (durability, owner). |
-| `custom_include_enchants` | `false` | Enchantments change a custom item's identity. |
-| `attributes` | `ignore` | `ignore`, `keys` or `values`: how item attributes count. Use `ignore` when they are written in the lore. |
-| `custom_window`, `custom_min_sales` | `90` days / `50` sales, `3` | The same, for custom items, which sell less often. |
-| `include` | `[sale, auction]` | Which kinds of sale feed the median. |
-| `per_seller_cap` | `3` | Sales counted per seller, so one seller cannot set the price alone. |
-| `suggest_on_sell` | `true` | Suggests the median as the price when selling. |
-| `warn_below`, `warn_above` | `0.5`, `3.0` | A price below or above the median times this asks the seller to confirm. |
-
-## `import`
-
-| Key | Default | Effect |
-|---|---|---|
-| `currency_map` | `{}` | Currency name in the source plugin → currency id here, e.g. `VAULT: vault`. See [Move from zAuctionHouse](../../guides/move-from-zauctionhouse/). |
+The texts are `lang/en.yml` and `lang/fr.yml` of the module's folder, edited in the editor's
+**Translations** like the menus and dialogs.

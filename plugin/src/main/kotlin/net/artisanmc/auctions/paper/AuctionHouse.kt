@@ -26,11 +26,14 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
 import java.math.BigDecimal
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
 
 /**
  * The add-on running on Paper: the market wired to Artisan's economy, items,
- * menus and messages. Commands and data sources call into this.
+ * menus and messages. Commands and data sources call into this, on the thread that owns the
+ * player (the main thread, or the player's region on Folia); the market itself runs on
+ * [threads]' main thread, so every call into it goes there first.
  */
 class AuctionHouse(
     private val plugin: Plugin,
@@ -41,7 +44,7 @@ class AuctionHouse(
     val config: () -> AuctionsConfig,
 ) {
     private val logger = plugin.logger
-    val threads = PaperThreads(plugin)
+    val threads = PaperThreads(plugin, api.scheduler.forPlugin(plugin))
     val wallets = EconomyWallets(currencies)
     val cache = ListingCache()
     val menus = MenuWatch(api.menus, AuctionsModule.FOLDER)
@@ -61,13 +64,15 @@ class AuctionHouse(
 
     /** The item a player is about to sell, remembered while the price dialog is open. */
     private data class Pending(val slot: Int, val stack: ItemStack, val type: ListingType?)
-    private val pending = HashMap<UUID, Pending>()
+    private val pending = ConcurrentHashMap<UUID, Pending>()
     /** A listing waiting for the seller to confirm a price far from the median. */
-    private val confirmations = HashMap<UUID, () -> Unit>()
+    private val confirmations = ConcurrentHashMap<UUID, () -> Unit>()
 
     fun start() {
         menus.start()
         market.start { Bukkit.getOnlinePlayers().forEach { join(it) } }
+        threads.repeat(EXPIRY_TICKS) { market.expireDue() }
+        threads.repeat(PURGE_TICKS) { purgeStaleClaims() }
     }
 
     fun stop() {
@@ -79,6 +84,7 @@ class AuctionHouse(
 
     // ── Menus ────────────────────────────────────────────────────────────────
 
+    // Main thread only.
     private var refreshQueued = false
     /** Listings changed since the last repaint; null: any (medians loaded, import). */
     private var changed: MutableSet<String>? = HashSet()
@@ -87,20 +93,20 @@ class AuctionHouse(
      * Repaints, once per tick at most, the lot menus showing a listing that changed. The
      * grids (`ah_main`, `ah_mine`) are paged and a repaint would send their viewers back
      * to the first page: they show the change on their next render, and a click on a
-     * listing that is gone is refused.
+     * listing that is gone is refused. Main thread.
      */
     fun scheduleRefresh(listing: UUID? = null) {
         if (listing == null) changed = null else changed?.add(listing.toString())
         if (refreshQueued || !plugin.isEnabled) return
         refreshQueued = true
-        Bukkit.getScheduler().runTask(plugin, Runnable {
+        threads.main {
             refreshQueued = false
             val ids = changed
             changed = HashSet()
             Bukkit.getOnlinePlayers().forEach { p ->
                 menus.repaint(p, listOf(MENU_LOT)) { args -> ids == null || args["id"]?.toString() in ids }
             }
-        })
+        }
     }
 
     fun join(p: Player) {
@@ -262,11 +268,14 @@ class AuctionHouse(
         // Take the item now; it comes back if the listing cannot be written.
         val taken = stack.clone()
         p.inventory.setItem(slot, null)
-        market.create(request, itemsBack = { giveBack(p.uniqueId, taken) }) { outcome ->
-            when (outcome) {
-                is Market.Listed -> notifier.tell(p, "listed", notifier.listingArgs(outcome.listing) +
-                    mapOf("fee" to notifier.money(currency, outcome.fee)))
-                else -> notifier.tell(p, outcome.key, display(outcome.args, currency))
+        val listed = request
+        threads.main {
+            market.create(listed, itemsBack = { giveBack(p.uniqueId, taken) }) { outcome ->
+                when (outcome) {
+                    is Market.Listed -> notifier.tell(p, "listed", notifier.listingArgs(outcome.listing) +
+                        mapOf("fee" to notifier.money(currency, outcome.fee)))
+                    else -> notifier.tell(p, outcome.key, display(outcome.args, currency))
+                }
             }
         }
     }
@@ -276,14 +285,13 @@ class AuctionHouse(
         confirmations.remove(p.uniqueId)?.invoke() ?: notifier.tell(p, "item_changed")
     }
 
-    /** Back to the player, or at their feet if the inventory filled meanwhile. */
+    /** Back to the player, or at their feet if the inventory filled meanwhile (main thread). */
     private fun giveBack(owner: UUID, stack: ItemStack) {
-        val p = Bukkit.getPlayer(owner)
-        if (p == null) {
+        threads.player(owner, task = {
+            Bukkit.getPlayer(owner)?.let { p -> p.inventory.addItem(stack).values.forEach { p.world.dropItemNaturally(p.location, it) } }
+        }, offline = {
             logger.severe("[Auctions] could not return ${stack.type} x${stack.amount} to offline $owner: ${PaperItems.encode(stack)}")
-            return
-        }
-        p.inventory.addItem(stack).values.forEach { p.world.dropItemNaturally(p.location, it) }
+        })
     }
 
     fun priceKey(stack: ItemStack): String = PriceKeys.of(PaperFacts.of(stack), config().median)
@@ -297,11 +305,13 @@ class AuctionHouse(
     fun buy(p: Player, id: UUID) {
         if (!p.hasPermission(PERM_USE)) return notifier.tell(p, "no_permission")
         val currency = cache.get(id)?.currency ?: config().currencies.default
-        market.buy(p.uniqueId, id) { outcome ->
-            when (outcome) {
-                is Market.Bought -> notifier.tell(p, "bought", notifier.listingArgs(outcome.listing))
-                is Market.Vetoed -> notifier.veto(p, outcome.veto.message)
-                else -> notifier.tell(p, outcome.key, display(outcome.args, currency))
+        threads.main {
+            market.buy(p.uniqueId, id) { outcome ->
+                when (outcome) {
+                    is Market.Bought -> notifier.tell(p, "bought", notifier.listingArgs(outcome.listing))
+                    is Market.Vetoed -> notifier.veto(p, outcome.veto.message)
+                    else -> notifier.tell(p, outcome.key, display(outcome.args, currency))
+                }
             }
         }
     }
@@ -310,24 +320,28 @@ class AuctionHouse(
         if (!p.hasPermission(PERM_BID)) return notifier.tell(p, "no_permission")
         val amount = amountText?.let(Fees::parseAmount) ?: return notifier.tell(p, "bad_amount", mapOf("input" to (amountText ?: "")))
         val currency = cache.get(id)?.currency ?: config().currencies.default
-        market.bid(p.uniqueId, id, amount) { outcome ->
-            when (outcome) {
-                is Market.BidPlaced -> notifier.tell(p, if (outcome.extended) "bid_placed_extended" else "bid_placed",
-                    notifier.listingArgs(outcome.listing) + mapOf("amount" to notifier.money(currency, outcome.amount)))
-                is Market.Bought -> notifier.tell(p, "bought", notifier.listingArgs(outcome.listing))
-                is Market.Vetoed -> notifier.veto(p, outcome.veto.message)
-                else -> notifier.tell(p, outcome.key, display(outcome.args, currency))
+        threads.main {
+            market.bid(p.uniqueId, id, amount) { outcome ->
+                when (outcome) {
+                    is Market.BidPlaced -> notifier.tell(p, if (outcome.extended) "bid_placed_extended" else "bid_placed",
+                        notifier.listingArgs(outcome.listing) + mapOf("amount" to notifier.money(currency, outcome.amount)))
+                    is Market.Bought -> notifier.tell(p, "bought", notifier.listingArgs(outcome.listing))
+                    is Market.Vetoed -> notifier.veto(p, outcome.veto.message)
+                    else -> notifier.tell(p, outcome.key, display(outcome.args, currency))
+                }
             }
         }
     }
 
     fun cancel(p: Player, id: UUID, admin: Boolean) {
         if (admin && !p.hasPermission(PERM_ADMIN)) return notifier.tell(p, "no_permission")
-        market.cancel(p.uniqueId, id, admin) { outcome ->
-            when (outcome) {
-                is Market.Cancelled -> notifier.tell(p, "cancelled", notifier.listingArgs(outcome.listing))
-                is Market.Vetoed -> notifier.veto(p, outcome.veto.message)
-                else -> notifier.tell(p, outcome.key, outcome.args)
+        threads.main {
+            market.cancel(p.uniqueId, id, admin) { outcome ->
+                when (outcome) {
+                    is Market.Cancelled -> notifier.tell(p, "cancelled", notifier.listingArgs(outcome.listing))
+                    is Market.Vetoed -> notifier.veto(p, outcome.veto.message)
+                    else -> notifier.tell(p, outcome.key, outcome.args)
+                }
             }
         }
     }
@@ -341,13 +355,14 @@ class AuctionHouse(
                 else -> notifier.tell(p, "nothing_to_claim")
             }
         }
+        // Both start with a database read and come back on the main thread.
         if (id == null) delivery.deliverAll(server, p.uniqueId, done) else delivery.deliverOne(p.uniqueId, id, done)
     }
 
     /** Cancels every active listing (admin). Returns how many were asked. */
     fun cancelAll(actor: Player, seller: UUID?): Int {
         val targets = cache.all().filter { seller == null || it.sellerUuid == seller }
-        targets.forEach { l -> market.cancel(actor.uniqueId, l.id, admin = true) {} }
+        threads.main { targets.forEach { l -> market.cancel(actor.uniqueId, l.id, admin = true) {} } }
         return targets.size
     }
 
@@ -402,10 +417,6 @@ class AuctionHouse(
 
     // ── Periodic work ────────────────────────────────────────────────────────
 
-    fun tick() {
-        market.expireDue()
-    }
-
     /** Items unclaimed past the retention are logged, then dropped; money is paid out. */
     fun purgeStaleClaims() {
         val cutoff = System.currentTimeMillis() - config().claims.retention.toMillis()
@@ -437,5 +448,10 @@ class AuctionHouse(
         const val PERM_SELL = "auctions.sell"
         const val PERM_BID = "auctions.bid"
         const val PERM_ADMIN = "auctions.admin"
+
+        /** Ends due listings every 5 s. */
+        const val EXPIRY_TICKS = 100L
+        /** Purges claims past their retention every hour. */
+        const val PURGE_TICKS = 72_000L
     }
 }

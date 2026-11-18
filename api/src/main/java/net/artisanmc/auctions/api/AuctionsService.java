@@ -14,7 +14,7 @@ import net.artisanmc.modules.api.annotations.Beta;
  * }</pre>
  *
  * Reads only: changes go through the cancellable events of this package.
- * Call from the main thread.
+ * Call from any game thread (the main thread, or on Folia any region thread).
  */
 @Beta
 public interface AuctionsService {

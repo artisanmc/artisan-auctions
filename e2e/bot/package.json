@@ -1,0 +1,6 @@
+{
+  "name": "artisan-auctions-e2e",
+  "private": true,
+  "description": "Bots that play the auction house on a local server",
+  "dependencies": { "mineflayer": "4.39.0" }
+}

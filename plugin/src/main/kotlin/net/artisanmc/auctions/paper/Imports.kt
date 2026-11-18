@@ -40,18 +40,18 @@ class Imports(private val plugin: Plugin, private val house: AuctionHouse, priva
         if (running) return sender.sendMessage("An import is already running.")
         running = true
         sender.sendMessage("${if (confirm) "Importing" else "Dry run of"} $which…")
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, Runnable {
+        house.threads.async {
             val lines = try {
                 val source = source(which)
                 val importer = Importer(house.server, house.store, transcoder(), ::currency)
                 val report = importer.run(source.id, source.read(), dryRun = !confirm)
                 if (!report.dryRun) {
                     val active = house.store.activeListings(house.server)
-                    Bukkit.getScheduler().runTask(plugin, Runnable {
+                    house.threads.main {
                         house.cache.replaceAll(active)
                         house.medians.clear()
                         house.scheduleRefresh()
-                    })
+                    }
                 }
                 report.lines() + when {
                     report.blocked -> listOf("Nothing was imported.")
@@ -64,8 +64,8 @@ class Imports(private val plugin: Plugin, private val house: AuctionHouse, priva
             } finally {
                 running = false
             }
-            Bukkit.getScheduler().runTask(plugin, Runnable { lines.forEach(sender::sendMessage) })
-        })
+            house.threads.main { lines.forEach(sender::sendMessage) }
+        }
     }
 
     /** Source name → currency id: the configured map, else the same name if it is registered. */

@@ -1,6 +1,5 @@
-# Groups of the docs sidebar on artisanmc.net, in order (one folder each).
-- { label: Getting started, directory: getting-started }
+# Groups of the docs sidebar on artisanmc.net, in order (one folder each). Pages at the root
+# (index, install, commands, troubleshooting, changelog) are ordered by their `sidebar.order`.
 - { label: Configuration, directory: configuration }
-- { label: Guides, directory: guides }
-- { label: Reference, directory: reference }
+- { label: Recipes, directory: recipes }
 - { label: Developers, directory: developers }
