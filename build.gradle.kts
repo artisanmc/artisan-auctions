@@ -1,6 +1,6 @@
 allprojects {
     group = "net.artisanmc"
-    version = providers.gradleProperty("auctionsVersion").getOrElse("0.1.0-SNAPSHOT")
+    version = providers.gradleProperty("auctionsVersion").getOrElse("1.0.0-SNAPSHOT")
 
     repositories {
         mavenLocal() // artisan-core-api before it is released: `cd artisan/plugin && ./gradlew :artisan-api:publishToMavenLocal -PapiVersion=<version>`

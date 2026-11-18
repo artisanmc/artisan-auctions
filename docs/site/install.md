@@ -35,7 +35,7 @@ missing and replaces them with each new version while you have not edited them. 
 yours; **Reset** in the editor puts the module's version back.
 
 Everything the plugin keeps on disk is in `plugins/ArtisanAuctions/`: copy that folder to move the module
-to another server. A server updated from a version before 0.1.0 kept the module's files in
+to another server. A server updated from a development build kept the module's files in
 `plugins/Artisan/modules/auctions/`: Artisan moves them to `artisan_module/` once, at startup.
 
 If the plugin disables itself with `ArtisanAuctions needs Artisan with the API 1.1.0 or newer`, update

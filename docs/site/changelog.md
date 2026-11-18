@@ -5,7 +5,7 @@ sidebar:
   order: 6
 ---
 
-## 0.1.0 (unreleased)
+## 1.0.0 (unreleased)
 
 - Requires Artisan API 1.1.0.
 - Runs on Paper, Folia and Spigot.
