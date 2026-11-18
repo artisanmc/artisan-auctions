@@ -2,6 +2,7 @@ name: ArtisanAuctions
 version: '${version}'
 main: net.artisanmc.auctions.AuctionsPlugin
 api-version: '1.21'
+folia-supported: true
 depend: [Artisan]
 softdepend: [Vault]
 description: Auction house for the Artisan suite (fixed-price sales and auctions)

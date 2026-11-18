@@ -22,7 +22,9 @@ Register an `AuctionCurrency` (id, balance, withdraw, deposit, in `BigDecimal`) 
 
 ## Events
 
-Every action fires a cancellable event first, on the main thread, before any money or item moves.
+Every action fires a cancellable event first, before any money or item moves. On Paper and Spigot it is
+the main thread. On Folia, `AuctionPreListEvent` fires on the seller's region thread and the others on the
+global region thread.
 `deny(Component)` cancels it with a message for the player.
 
 | Before (cancellable) | Can change |

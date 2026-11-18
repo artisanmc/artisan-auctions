@@ -13,7 +13,7 @@ import net.artisanmc.modules.api.annotations.Beta;
  * Bukkit.getServicesManager().register(AuctionCurrency.class, new GemsCurrency(), plugin, ServicePriority.Normal);
  * }</pre>
  *
- * Called on the main thread. {@code amount} is positive; a refused withdrawal or deposit
+ * Called on the main thread (the global region thread on Folia). {@code amount} is positive; a refused withdrawal or deposit
  * returns false and leaves the balance as it was.
  */
 @Beta

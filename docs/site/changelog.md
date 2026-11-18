@@ -8,7 +8,7 @@ sidebar:
 ## 0.1.0 (unreleased)
 
 - Requires Artisan API 1.1.0.
-- Runs on Paper and Spigot (not Folia).
+- Runs on Paper, Folia and Spigot.
 - Fixed-price sales and timed auctions, with anti-sniping, optional buy-now price, listing fee and sale tax.
 - Claims box, money owed paid on join, purge after `claims.retention`.
 - Median price per item and currency, custom items recognised through Nexo, Oraxen, ItemsAdder or

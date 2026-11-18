@@ -53,13 +53,15 @@ class MedianCache(
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Key, Entry>) = size > MAX_ENTRIES
     }
     private val loading = HashSet<Key>()
+    /** Guards [entries] and [loading]: menus read from the players' threads (their regions on Folia). */
+    private val lock = Any()
 
-    /** Main thread. Null while unknown (a computation is started). */
+    /** Any game thread. Null while unknown (a computation is started). */
     fun get(priceKey: String, currency: String): MedianPrice? {
         val m = config().median
         if (!m.enabled) return null
         val key = Key(priceKey, currency)
-        val e = entries[key]
+        val e = synchronized(lock) { entries[key] }
         if (e != null && clock() - e.at < TTL_MS) return e.median
         load(key)
         return e?.median
@@ -67,13 +69,13 @@ class MedianCache(
 
     /** A sale of this key landed: the next read recomputes. */
     fun invalidate(priceKey: String, currency: String) {
-        entries.remove(Key(priceKey, currency))
+        synchronized(lock) { entries.remove(Key(priceKey, currency)) }
     }
 
-    fun clear() = entries.clear()
+    fun clear() = synchronized(lock) { entries.clear() }
 
     private fun load(key: Key) {
-        if (!loading.add(key)) return
+        if (!synchronized(lock) { loading.add(key) }) return
         val m = config().median
         val custom = PriceKeys.isCustom(key.priceKey)
         val window = if (custom) m.customWindow else m.window
@@ -84,11 +86,11 @@ class MedianCache(
                 MedianMath.of(store.recentSales(key.priceKey, key.currency, since, window.maxSales, m.include), m.perSellerCap, minSales, window.days)
             }.onFailure { logger.log(Level.WARNING, "[Auctions] median of ${key.priceKey} failed", it) }.getOrNull()
             threads.main {
-                loading -= key
-                if (result != null) {
-                    entries[key] = Entry(result, clock())
-                    loaded()
+                synchronized(lock) {
+                    loading -= key
+                    if (result != null) entries[key] = Entry(result, clock())
                 }
+                if (result != null) loaded()
             }
         }
     }

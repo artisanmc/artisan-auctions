@@ -73,12 +73,9 @@ class AuctionsPlugin : JavaPlugin() {
 
         server.pluginManager.registerEvents(PlayerListener(house), this)
         house.start()
-        server.scheduler.runTaskTimer(this, Runnable { house.tick() }, EXPIRY_TICKS, EXPIRY_TICKS)
-        server.scheduler.runTaskTimer(this, Runnable { house.purgeStaleClaims() }, PURGE_TICKS, PURGE_TICKS)
     }
 
     override fun onDisable() {
-        server.scheduler.cancelTasks(this)
         house?.stop()
         house = null
         server.servicesManager.unregisterAll(this)
@@ -122,9 +119,5 @@ class AuctionsPlugin : JavaPlugin() {
          * without Adventure, table prefix, player commands.
          */
         const val MIN_CORE_API = "1.1.0"
-        /** Ends due listings every 5 s. */
-        const val EXPIRY_TICKS = 100L
-        /** Purges claims past their retention every hour. */
-        const val PURGE_TICKS = 72_000L
     }
 }

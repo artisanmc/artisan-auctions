@@ -46,26 +46,53 @@ class ClaimDelivery(
                     .onFailure { logger.log(Level.WARNING, "[Auctions] claim ${c.id} could not be marked", it) }
                     .getOrDefault(false)
             }
-            threads.main {
-                val delivered = mutableListOf<Claim>()
-                val failed = mutableListOf<Claim>()
-                for (c in taken) {
-                    val ok = when (c.kind) {
-                        ClaimKind.MONEY -> wallets.deposit(c.owner, c.currency!!, c.amount!!)
-                        ClaimKind.ITEM -> giver.giveAll(c.owner, listOf(c.itemBlob!!))
-                    }
-                    if (ok) delivered += c else failed += c
-                }
-                delivered.forEach { hooks().claimed(it) }
-                val report = Report(delivered, skipped + failed + (eligible - taken.toSet()))
-                if (failed.isEmpty()) {
-                    hooks().claimsChanged(owners)
-                } else threads.async {
-                    failed.forEach { runCatching { store.reopenClaim(it.id) } }
+            threads.main { handOver(taken, owners, skipped + (eligible - taken.toSet()), done) }
+        }
+    }
+
+    /**
+     * Money is paid here, on the main thread; items on the thread that owns their owner, who
+     * may have left meanwhile. A claim not handed over is put back in the box. [done] runs once
+     * every claim is settled, on the main thread.
+     */
+    private fun handOver(taken: List<Claim>, owners: Set<UUID>, notTaken: List<Claim>, done: (Report) -> Unit) {
+        val delivered = mutableListOf<Claim>()
+        val failed = mutableListOf<Claim>()
+        val (money, items) = taken.partition { it.kind == ClaimKind.MONEY }
+        for (c in money) {
+            if (wallets.deposit(c.owner, c.currency!!, c.amount!!)) delivered += c else failed += c
+        }
+        val byOwner = items.groupBy { it.owner }
+        var waiting = byOwner.size
+
+        fun finish() {
+            delivered.forEach { hooks().claimed(it) }
+            val report = Report(delivered.toList(), notTaken + failed)
+            if (failed.isEmpty()) {
+                hooks().claimsChanged(owners)
+            } else {
+                val reopen = failed.toList()
+                threads.async {
+                    reopen.forEach { runCatching { store.reopenClaim(it.id) } }
                     threads.main { hooks().claimsChanged(owners) }
                 }
-                done(report)
             }
+            done(report)
+        }
+
+        if (waiting == 0) return finish()
+        for ((owner, claims) in byOwner) {
+            threads.player(owner, task = {
+                // One claim at a time: those that fit are given, the others wait in the box.
+                val ok = claims.map { c -> c to giver.giveAll(owner, listOf(c.itemBlob!!)) }
+                threads.main {
+                    ok.forEach { (c, given) -> if (given) delivered += c else failed += c }
+                    if (--waiting == 0) finish()
+                }
+            }, offline = {
+                failed += claims
+                if (--waiting == 0) finish()
+            })
         }
     }
 

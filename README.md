@@ -69,8 +69,8 @@ AuctionsService auctions = Bukkit.getServicesManager().load(AuctionsService.clas
 auctions.medianPrice(stack, "vault").ifPresent(m -> ...);
 ```
 
-Every action fires a cancellable event first, on the main thread, before any money or item
-moves: `AuctionPreListEvent` (price, opening bid and duration can be changed; the known
+Every action fires a cancellable event first, before any money or item moves (on Folia,
+`AuctionPreListEvent` on the seller's region thread, the others on the global region thread): `AuctionPreListEvent` (price, opening bid and duration can be changed; the known
 median is given), `AuctionPrePurchaseEvent`, `AuctionPreBidEvent`, `AuctionPreCancelEvent`.
 `deny(Component)` cancels with a message for the player. Outcomes follow:
 `AuctionListedEvent`, `AuctionSoldEvent`, `AuctionBidPlacedEvent`, `AuctionOutbidEvent`,
@@ -107,7 +107,7 @@ Inside the plugin, Bukkit stays at the edge so the rules are tested without a se
 
 ## Build
 
-Requires Artisan with the API 1.1.0 or later. Paper or Spigot; the plugin is not marked for Folia. On Paper, items are stored
+Requires Artisan with the API 1.1.0 or later. Paper, Folia or Spigot. On Paper and Folia, items are stored
 with Paper's byte serialization; on Spigot, with Bukkit's YAML serialization (`yaml:` prefix).
 A server moving from Paper to Spigot cannot read the items stored on Paper. `artisan-core-api` comes
 from `repo.artisanmc.net/releases`; for an unreleased version, publish it locally first

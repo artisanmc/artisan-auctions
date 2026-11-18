@@ -13,7 +13,7 @@ command imports an existing zAuctionHouse.
 
 | | |
 |---|---|
-| Server | Paper or Spigot 1.21 or newer (not Folia) |
+| Server | Paper, Folia or Spigot 1.21 or newer |
 | Java | 21 |
 | Artisan | API 1.1.0 or newer |
 | Optional | Vault and an economy plugin, for the `vault` currency |
