@@ -186,6 +186,8 @@ class Imports(
         }
         "MYSQL", "MARIADB" -> ({
             val url = "jdbc:mysql://${db["host"] ?: "localhost"}:${db["port"] ?: 3306}/${db["database"]}"
+            // The server ships the driver in a class loader DriverManager did not scan at startup.
+            runCatching { Class.forName("com.mysql.cj.jdbc.Driver") }
             DriverManager.getConnection(url, db["user"]?.toString(), db["password"]?.toString()).apply { isReadOnly = true }
         })
         else -> error("unsupported storage type $type")
