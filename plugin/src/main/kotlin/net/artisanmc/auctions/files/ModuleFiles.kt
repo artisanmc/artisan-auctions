@@ -6,7 +6,7 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
 /**
- * The files the add-on ships for its folder `plugins/Artisan/modules/auctions/`: menus, dialogs,
+ * The files the add-on ships for its folder `plugins/ArtisanAuctions/artisan_module/`: menus, dialogs,
  * texts and settings, a system template Artisan keeps there (`TemplateDeclaration.system()`). A
  * missing file is written again, an untouched one follows each new version, an edited one stays
  * the admin's until Reset in the editor, and a file already on disk before (written by an
@@ -14,7 +14,7 @@ import java.nio.file.StandardCopyOption
  *
  * Artisan writes `.artisan/` and the command files into the folder before the add-on starts: a
  * folder is never empty on a first start, which is why "write the defaults into an empty folder"
- * left Artisan 2 servers with `/ah` alone.
+ * left servers with `/ah` alone.
  */
 object ModuleFiles {
     const val ROOT = "module"

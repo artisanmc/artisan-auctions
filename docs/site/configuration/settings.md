@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-`plugins/Artisan/modules/auctions/data/config.yaml` holds the rules players see: kinds of listing,
+`plugins/ArtisanAuctions/artisan_module/data/config.yaml` holds the rules players see: kinds of listing,
 durations, fees, currencies, forbidden items, the claims box and the median price. Edit it in the editor
 (the **auctions** folder, **Settings**); a publish applies it.
 
@@ -66,7 +66,7 @@ Durations are written `90s`, `15m`, `48h`, `30d`, or combined (`1h 30m`).
 
 | Key | Type | Default | Effect |
 |---|---|---|---|
-| `sales.enabled` | boolean | `true` | Fixed-price sales. With auctions on too, the menus show type tabs; both off, the house is read-only and claims still work. |
+| `sales.enabled` | boolean | `true` | Fixed-price sales. With auctions on too, the main menu shows a filter button that turns through all listings, sales and auctions; both off, the house is read-only and claims still work. |
 | `sales.duration` | duration | `48h` | Time before an unsold item goes back to the seller's claims. |
 | `sales.min_price`, `sales.max_price` | number | `1`, `1000000000` | Price bounds. |
 | `auctions.enabled` | boolean | `true` | Timed auctions. |
@@ -128,5 +128,5 @@ Durations are written `90s`, `15m`, `48h`, `30d`, or combined (`1h 30m`).
 
 ## Texts
 
-The texts are `plugins/Artisan/modules/auctions/lang/en.yaml` and `fr.yaml`, edited in the editor's
+The texts are `plugins/ArtisanAuctions/artisan_module/lang/en.yaml` and `fr.yaml`, edited in the editor's
 **Translations** like the menus and dialogs.

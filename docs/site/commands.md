@@ -32,7 +32,7 @@ sidebar:
 
 ## Rename the command
 
-Artisan writes `/ah` as `plugins/Artisan/modules/auctions/commands/ah.yml`. Change its name, aliases,
+Artisan writes `/ah` as `plugins/ArtisanAuctions/artisan_module/commands/ah.yml`. Change its name, aliases,
 permission, cooldown or conditions there, or in the editor (the **auctions** folder, its commands). An
 edited file stays yours; **Reset** in the editor puts the module's version back.
 

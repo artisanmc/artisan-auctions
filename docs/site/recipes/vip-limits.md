@@ -8,7 +8,7 @@ sidebar:
 Players keep 5 active listings, VIPs 15, staff no limit.
 
 ```yaml
-# plugins/Artisan/modules/auctions/data/config.yaml
+# plugins/ArtisanAuctions/artisan_module/data/config.yaml
 limits:
   max_active_listings: 5
 ```

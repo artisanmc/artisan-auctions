@@ -7,7 +7,7 @@ sidebar:
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `ArtisanAuctions needs Artisan with the API 1.0.0 or newer (found: …)` and the plugin disables itself | Artisan is missing or too old. | Install or update Artisan to 1.0.0 or newer. |
+| `ArtisanAuctions needs Artisan with the API 1.1.0 or newer (found: …)` and the plugin disables itself | Artisan is missing or too old. | Install or update Artisan to a version with the API 1.1.0 or newer. |
 | `/ah` says the currency is unknown, or nothing can be sold | `vault` is allowed but Vault has no economy plugin. | Install an economy plugin, or allow another currency in `currencies.allowed`. |
 | An item cannot be sold | Its material is in `items.blacklist`, or its lore matches `items.blacklist_lore_contains`. | Change the lists in the Settings. |
 | The median is missing on a listing | Fewer sales than `median.min_sales` (or `custom_min_sales`) in the window. | Wait for more sales, or lower the minimum. |

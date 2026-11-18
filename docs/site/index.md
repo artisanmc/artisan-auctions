@@ -13,9 +13,9 @@ command imports an existing zAuctionHouse.
 
 | | |
 |---|---|
-| Server | Paper 1.21 or newer (not Folia) |
+| Server | Paper or Spigot 1.21 or newer (not Folia) |
 | Java | 21 |
-| Artisan | API 1.0.0 or newer (Artisan 1.0.0) |
+| Artisan | API 1.1.0 or newer |
 | Optional | Vault and an economy plugin, for the `vault` currency |
 
 Artisan provides the menus, the dialogs, the editor and the database (H2, MySQL or MariaDB, set in

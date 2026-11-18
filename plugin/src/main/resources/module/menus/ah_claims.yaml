@@ -17,9 +17,14 @@ elements:
     iterates: { source: claims, alias: c }
     item: "{c.icon}"
     lore:
-      - ""
-      - { en: "<gray>Kept for: <white>{c.expires_at.until()}", fr: "<gray>Conservé encore : <white>{c.expires_at.until()}" }
-      - { en: "<yellow>Click to take it", fr: "<yellow>Cliquer pour le récupérer" }
+      en:
+        - ""
+        - "<gray>Kept for: <white>{c.expires_at.until()}"
+        - "<yellow>Click to take it"
+      fr:
+        - ""
+        - "<gray>Conservé encore : <white>{c.expires_at.until()}"
+        - "<yellow>Cliquer pour le récupérer"
     click:
       left: [ { run_command: "auctions:claim {c.id}" } ]
     states:
@@ -27,7 +32,10 @@ elements:
         material: GOLD_INGOT
         title: "<gold>{c.amount_display}"
         lore:
-          - { en: "<yellow>Click to receive it", fr: "<yellow>Cliquer pour le recevoir" }
+          en:
+            - "<yellow>Click to receive it"
+          fr:
+            - "<yellow>Cliquer pour le recevoir"
         click:
           left: [ { run_command: "auctions:claim {c.id}" } ]
   - id: back
@@ -49,7 +57,10 @@ elements:
     material: HOPPER
     title: { en: "<green>Take everything", fr: "<green>Tout récupérer" }
     lore:
-      - { en: "<gray>What does not fit stays here", fr: "<gray>Ce qui ne rentre pas reste ici" }
+      en:
+        - "<gray>What does not fit stays here"
+      fr:
+        - "<gray>Ce qui ne rentre pas reste ici"
     click: { left: [ { run_command: "auctions:claim all" } ] }
   - id: next
     positions: 50

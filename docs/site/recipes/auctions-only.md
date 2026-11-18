@@ -8,7 +8,7 @@ sidebar:
 Your house runs auctions only, of 12 or 24 hours, and a seller may add a buy-now price.
 
 ```yaml
-# plugins/Artisan/modules/auctions/data/config.yaml (editor: auctions folder, Settings)
+# plugins/ArtisanAuctions/artisan_module/data/config.yaml (editor: auctions folder, Settings)
 sales:
   enabled: false
 auctions:
@@ -19,5 +19,5 @@ auctions:
   buyout: true
 ```
 
-With one kind of listing, the menus show no type tabs. Check it: hold an item, `/ah auction 100 12h 400`,
+With one kind of listing, the menus show no type filter. Check it: hold an item, `/ah auction 100 12h 400`,
 then open `/ah` from another account and buy it now.
