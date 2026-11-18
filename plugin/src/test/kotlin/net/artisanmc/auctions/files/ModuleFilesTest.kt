@@ -39,4 +39,20 @@ class ModuleFilesTest {
             assertEquals(listOf(name), dir.list()!!.toList())
         }
     }
+
+    @Test fun `upgrades the untouched english and french module file to four languages`() {
+        val dir = File(root, "old").apply { mkdirs() }
+        File(dir, "artisan-module.yml").writeText("schema: module/v1\ndefault_lang: en\nlanguages:\n  - en\n  - fr\nlore_max_width: 240\n")
+        assertTrue(ModuleFiles.writeModuleFile(dir))
+        assertEquals(ModuleFiles.MODULE_FILE, File(dir, "artisan-module.yml").readText())
+        assertFalse(ModuleFiles.writeModuleFile(dir))
+    }
+
+    @Test fun `keeps an edited module file`() {
+        val dir = File(root, "edited").apply { mkdirs() }
+        val mine = "schema: module/v1\ndefault_lang: fr\nlanguages:\n  - fr\n  - en\nlore_max_width: 240\n"
+        File(dir, "artisan-module.yml").writeText(mine)
+        assertFalse(ModuleFiles.writeModuleFile(dir))
+        assertEquals(mine, File(dir, "artisan-module.yml").readText())
+    }
 }

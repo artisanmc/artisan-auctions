@@ -15,7 +15,7 @@ command imports an existing zAuctionHouse or AuctionHouse.
 |---|---|
 | Server | Paper, Folia or Spigot 1.21 or newer |
 | Java | 21 |
-| Artisan | API 1.1.0 or newer |
+| Artisan | API 1.1.0 or newer (1.5.0 for the editor's statistics) |
 | Optional | Vault and an economy plugin, for the `vault` currency |
 
 Artisan provides the menus, the dialogs, the editor and the database (H2, MySQL or MariaDB, set in
@@ -27,6 +27,7 @@ Artisan provides the menus, the dialogs, the editor and the database (H2, MySQL 
 - [The rules: sales, auctions, fees, median](configuration/settings/), and
   [the local config.yml](configuration/config-yml/).
 - [Commands and permissions](commands/).
+- [Statistics in the editor](statistics/).
 - Worked cases: [auctions only](recipes/auctions-only/), [VIP listing limits](recipes/vip-limits/),
   [move from zAuctionHouse](recipes/zauctionhouse-import/), [move from AuctionHouse](recipes/auctionhouse-import/),
   [import from any plugin](recipes/import-file/).

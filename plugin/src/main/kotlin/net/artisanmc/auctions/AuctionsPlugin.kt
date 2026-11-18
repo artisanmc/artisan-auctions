@@ -62,7 +62,7 @@ class AuctionsPlugin : JavaPlugin() {
         val folder = api.projectRoots.pluginFolder(AuctionsModule.FOLDER, AuctionsModule.ID, moduleDir)
         if (ModuleFiles.writeModuleFile(folder)) {
             api.project.reload()
-            logger.info("Module file written to ${folder.path}")
+            logger.info("Module file (languages) written to ${folder.path}")
         }
 
         val currencies = Currencies(server.servicesManager)

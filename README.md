@@ -90,6 +90,7 @@ Menus can read `auctions:listings` (params `tab`, `sort`, `search`), `auctions:m
 |---|---|
 | `api/` | `artisan-auctions-api`: `AuctionsService`, `AuctionCurrency`, `AuctionListing`, `MedianPrice`, the events. |
 | `plugin/` | The Paper plugin `ArtisanAuctions` (Kotlin). `depend: [Artisan]`. |
+| `editor/` | The Auctions tab of the editor's Statistics (TypeScript + React against `@artisan/editor-sdk`, vendored in `editor/vendor/`). `cd editor && npm ci && npm test && npm run build` writes `plugin/src/main/resources/artisan-editor/ui.js`, which is committed (CI checks it). Raising the SDK = new `vendor/*.tgz`, `package.json`, `AuctionsModule.EDITOR_SDK` and a build, in one commit. |
 
 Inside the plugin, Bukkit stays at the edge so the rules are tested without a server:
 
@@ -104,6 +105,9 @@ Inside the plugin, Bukkit stays at the edge so the rules are tested without a se
   `auctions_`), in the suite's shared database (`api.database`).
 - `paper/`: the Paper side: item serialization, currencies, events, menu repaints, `/ah`,
   data sources and module commands.
+- `stats/`: the Stat events recorded around the market's hooks (`MarketStats`) and the
+  `auctions:market` figure (`MarketFigures`); `paper/ArtisanStats` declares them from API 1.5.0.
+  Event names and dimensions are public: never rename one.
 - `src/main/resources/module/`: the menus, dialogs, texts and settings of the module's folder
   `plugins/ArtisanAuctions/artisan_module/`, a system template Artisan keeps there (`files/ModuleFiles`):
   a missing file is written again, an untouched one follows each new version, an edited one

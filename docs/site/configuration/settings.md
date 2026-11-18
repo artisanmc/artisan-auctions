@@ -130,5 +130,9 @@ Durations are written `90s`, `15m`, `48h`, `30d`, or combined (`1h 30m`).
 
 ## Texts
 
-The texts are `lang/en.yml` and `lang/fr.yml` of the module's folder, edited in the editor's
-**Translations** like the menus and dialogs.
+The texts are `lang/en.yaml`, `lang/fr.yaml`, `lang/de.yaml` and `lang/es.yaml` of the module's
+folder, edited in the editor's **Translations** like the menus and dialogs. Menus and dialogs speak
+the same four languages. Which one a player sees follows Artisan's `language` and
+`per_player_language` (`plugins/Artisan/config.yml`): with `per_player_language: true`, the
+client's language when the folder's `artisan-module.yml` lists it, English otherwise. Remove a language from that list to hide it; add
+one there and in the editor to translate into it.

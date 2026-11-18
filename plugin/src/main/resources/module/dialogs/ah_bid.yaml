@@ -1,23 +1,23 @@
 schema: dialog/v1
-title: { en: "Bid on {name}", fr: "Enchérir sur {name}" }
+title: { en: "Bid on {name}", fr: "Enchérir sur {name}", de: "Auf {name} bieten", es: "Pujar por {name}" }
 can_close_with_escape: true
 body:
-  - { type: text, text: { en: "Seller: <white>{seller}", fr: "Vendeur : <white>{seller}" } }
-  - { type: text, text: { en: "Lowest bid: <gold>{min_bid_display}", fr: "Offre minimale : <gold>{min_bid_display}" } }
-  - { type: text, text: { en: "<gray>Your bid is held until someone outbids you.", fr: "<gray>Votre offre est retenue jusqu'à ce qu'on la dépasse." } }
+  - { type: text, text: { en: "Seller: <white>{seller}", fr: "Vendeur : <white>{seller}", de: "Verkäufer: <white>{seller}", es: "Vendedor: <white>{seller}" } }
+  - { type: text, text: { en: "Lowest bid: <gold>{min_bid_display}", fr: "Offre minimale : <gold>{min_bid_display}", de: "Mindestgebot: <gold>{min_bid_display}", es: "Puja mínima: <gold>{min_bid_display}" } }
+  - { type: text, text: { en: "<gray>Your bid is held until someone outbids you.", fr: "<gray>Votre offre est retenue jusqu'à ce qu'on la dépasse.", de: "<gray>Dein Gebot wird einbehalten, bis dich jemand überbietet.", es: "<gray>Tu puja queda retenida hasta que alguien la supere." } }
 inputs:
-  - { id: amount, type: text, label: { en: "Your bid", fr: "Votre offre" }, default: "", max_length: 16 }
+  - { id: amount, type: text, label: { en: "Your bid", fr: "Votre offre", de: "Dein Gebot", es: "Tu puja" }, default: "", max_length: 16 }
 buttons:
   - id: confirm
-    label: { en: "<gold>Bid", fr: "<gold>Enchérir" }
+    label: { en: "<gold>Bid", fr: "<gold>Enchérir", de: "<gold>Bieten", es: "<gold>Pujar" }
     actions:
       - run_command: "auctions:bid {id} {amount}"
       - open_previous_menu
   - id: min
-    label: { en: "Bid the minimum", fr: "Offre minimale" }
+    label: { en: "Bid the minimum", fr: "Offre minimale", de: "Mindestgebot abgeben", es: "Pujar el mínimo" }
     actions:
       - run_command: "auctions:bid {id} {min_bid}"
       - open_previous_menu
   - id: cancel
-    label: { en: "Cancel", fr: "Annuler" }
+    label: { en: "Cancel", fr: "Annuler", de: "Abbrechen", es: "Cancelar" }
     actions: [ open_previous_menu ]

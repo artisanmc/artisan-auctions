@@ -6,6 +6,8 @@ import net.artisanmc.auctions.config.AuctionsConfig
 import net.artisanmc.auctions.config.formatDuration
 import net.artisanmc.auctions.config.parseDuration
 import net.artisanmc.auctions.db.AuctionStore
+import net.artisanmc.auctions.stats.MarketStats
+import net.artisanmc.auctions.stats.StatSink
 import net.artisanmc.auctions.market.ClaimDelivery
 import net.artisanmc.auctions.market.ClaimKind
 import net.artisanmc.auctions.market.Fees
@@ -53,12 +55,14 @@ class AuctionHouse(
         Bukkit.getPlayer(owner)?.let { p -> menus.repaint(p, listOf(MENU_CLAIMS)) }
     }
     val medians = MedianCache(store, threads, config, logger, loaded = { scheduleRefresh() })
-    val hooks = EventHooks(notifier,
+    /** Set by the module when Artisan keeps statistics ([ArtisanStats]). */
+    @Volatile var statSink: StatSink? = null
+    val hooks = MarketStats(EventHooks(notifier,
         median = { r -> r.items.map { it.priceKey }.distinct().singleOrNull()?.let { medians.get(it, r.currency)?.price } },
         onSold = { l -> l.sharedPriceKey?.let { medians.invalidate(it, l.currency) } },
         listingsChanged = ::scheduleRefresh, claimsChanged = { owners ->
         owners.filter { Bukkit.getPlayer(it) != null }.forEach { claims.reload(it) }
-    })
+    }), names = { Bukkit.getOfflinePlayer(it).name }) { event, player, dims, value, details -> statSink?.record(event, player, dims, value, details) }
     val delivery = ClaimDelivery(store, threads, wallets, InventoryGiver(), { hooks }, logger)
     val market = Market(server, store, cache, threads, wallets, delivery, config, { hooks }, logger)
 

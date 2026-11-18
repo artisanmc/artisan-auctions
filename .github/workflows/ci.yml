@@ -33,3 +33,21 @@ jobs:
         with:
           name: test-reports
           path: plugin/build/reports/tests/
+
+  editor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: editor
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      # The jar serves the committed bundle: it must be the build of editor/src.
+      - name: The committed ui.js is up to date
+        run: git diff --exit-code -- ../plugin/src/main/resources/artisan-editor/ui.js

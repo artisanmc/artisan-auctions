@@ -126,6 +126,7 @@ class Market(
                 if (ok) {
                     cache.put(listing)
                     hooks().listed(listing)
+                    hooks().feePaid(listing, fee)
                     done(Listed(listing, fee))
                 } else {
                     itemsBack()

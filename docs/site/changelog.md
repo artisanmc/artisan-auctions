@@ -16,4 +16,7 @@ sidebar:
 - Import from zAuctionHouse v3 and v4, AuctionHouse (Kiranhart), and any plugin through the
   `auctions/1` import file. With Artisan API 1.7.0, through `/artisan import`: history, and rollback
   of an import while keeping what players changed since.
+- English, French, German and Spanish.
+- An Auctions tab in the editor's Statistics (Artisan API 1.5.0 or newer): volume, sales, revenue,
+  what the house holds, top items and latest sales.
 - Menus, dialogs, texts and settings in `plugins/ArtisanAuctions/artisan_module/`, edited in the Artisan editor.

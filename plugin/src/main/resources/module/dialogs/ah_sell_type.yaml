@@ -1,16 +1,16 @@
 schema: dialog/v1
-title: { en: "Sell {item_name}", fr: "Vendre {item_name}" }
+title: { en: "Sell {item_name}", fr: "Vendre {item_name}", de: "{item_name} verkaufen", es: "Vender {item_name}" }
 can_close_with_escape: true
 body:
-  - { type: text, text: { en: "How do you want to sell <white>{quantity}× {item_name}<reset>?", fr: "Comment voulez-vous vendre <white>{quantity}× {item_name}<reset> ?" } }
-  - { type: text, text: { en: "<gray>Fixed price: the first buyer gets it.\n<gray>Auction: the best bid wins at the end.", fr: "<gray>Prix fixe : le premier acheteur l'emporte.\n<gray>Enchère : la meilleure offre gagne à la fin." } }
+  - { type: text, text: { en: "How do you want to sell <white>{quantity}× {item_name}<reset>?", fr: "Comment voulez-vous vendre <white>{quantity}× {item_name}<reset> ?", de: "Wie möchtest du <white>{quantity}× {item_name}<reset> verkaufen?", es: "¿Cómo quieres vender <white>{quantity}× {item_name}<reset>?" } }
+  - { type: text, text: { en: "<gray>Fixed price: the first buyer gets it.\n<gray>Auction: the best bid wins at the end.", fr: "<gray>Prix fixe : le premier acheteur l'emporte.\n<gray>Enchère : la meilleure offre gagne à la fin.", de: "<gray>Festpreis: Der erste Käufer bekommt es.\n<gray>Auktion: Das höchste Gebot gewinnt am Ende.", es: "<gray>Precio fijo: se lo lleva el primer comprador.\n<gray>Subasta: gana la mejor puja al final." } }
 buttons:
   - id: sale
-    label: { en: "<green>Fixed price", fr: "<green>Prix fixe" }
+    label: { en: "<green>Fixed price", fr: "<green>Prix fixe", de: "<green>Festpreis", es: "<green>Precio fijo" }
     actions: [ { run_command: "auctions:sell_start sale" } ]
   - id: auction
-    label: { en: "<gold>Auction", fr: "<gold>Enchère" }
+    label: { en: "<gold>Auction", fr: "<gold>Enchère", de: "<gold>Auktion", es: "<gold>Subasta" }
     actions: [ { run_command: "auctions:sell_start auction" } ]
   - id: cancel
-    label: { en: "Cancel", fr: "Annuler" }
+    label: { en: "Cancel", fr: "Annuler", de: "Abbrechen", es: "Cancelar" }
     actions: [ close_dialog ]

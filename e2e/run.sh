@@ -12,7 +12,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"; E2E="$ROOT/e2e"; WORK="$E2E/work/$SERV
 mkdir -p "$WORK/plugins/ArtisanAuctions/artisan_module/data"
 
 (cd "$ROOT" && ./gradlew -q build)
-JAR="$(ls "$ROOT"/plugin/build/libs/ArtisanAuctions-*.jar | grep -v -- '-sources' | head -1)"
+JAR="$(ls "$ROOT"/plugin/build/libs/ArtisanAuctions-*.jar | grep -v -- '-sources' | sort -V | tail -1)"
 
 # Harness: compiled against the jars the build already resolved.
 CP="$(find ~/.gradle/caches/modules-2 -name 'paper-api-*.jar' ! -name '*sources*' | head -1):$(find ~/.gradle/caches/modules-2 -name 'artisan-core-api-*.jar' ! -name '*sources*' | sort -V | tail -1):$(ls "$ROOT"/api/build/libs/api-*.jar | grep -v sources | head -1)"
@@ -24,6 +24,8 @@ cp "$E2E/harness/plugin.yml" "$E2E/work/harness/"
 
 [ -f "$WORK/server.jar" ] || curl -fsS -o "$WORK/server.jar" "$(curl -fsS "https://fill.papermc.io/v3/projects/$SERVER/versions/$MC/builds/latest" \
   | python3 -c "import json,sys;print(json.load(sys.stdin)['downloads']['server:default']['url'])")"
+# A jar left by an earlier run of another version would be loaded too.
+rm -f "$WORK"/plugins/ArtisanAuctions-*.jar "$WORK"/plugins/.paper-remapped/ArtisanAuctions-*.jar
 cp "$ARTISAN_JAR" "$JAR" "$E2E/work/E2EHarness.jar" "$WORK/plugins/"
 echo "eula=true" > "$WORK/eula.txt"
 printf 'online-mode=false\nserver-port=25601\nlevel-type=minecraft\\:flat\nspawn-protection=0\ndifficulty=peaceful\nview-distance=4\nsimulation-distance=4\n' > "$WORK/server.properties"

@@ -1,7 +1,7 @@
 schema: menu/v1
 title:
   - kind: plain
-    value: { en: "<dark_gray>My listings", fr: "<dark_gray>Mes annonces" }
+    value: { en: "<dark_gray>My listings", fr: "<dark_gray>Mes annonces", de: "<dark_gray>Meine Angebote", es: "<dark_gray>Mis anuncios" }
 size: 54
 inputs:
   - name: summary
@@ -20,12 +20,16 @@ elements:
   - id: info
     positions: 4
     material: BOOK
-    title: { en: "<yellow>{summary[0].mine}/{summary[0].limit} listings", fr: "<yellow>{summary[0].mine}/{summary[0].limit} annonces" }
+    title: { en: "<yellow>{summary[0].mine}/{summary[0].limit} listings", fr: "<yellow>{summary[0].mine}/{summary[0].limit} annonces", de: "<yellow>{summary[0].mine}/{summary[0].limit} Angebote", es: "<yellow>{summary[0].mine}/{summary[0].limit} anuncios" }
     lore:
       en:
         - "<gray>Unsold items return to your claims box"
       fr:
         - "<gray>Les invendus reviennent dans votre récupération"
+      de:
+        - "<gray>Unverkauftes kommt in dein Abholfach zurück"
+      es:
+        - "<gray>Lo no vendido vuelve a tu buzón de recogida"
   - id: grid
     positions: "10-16,19-25,28-34,37-43"
     iterates: { source: listings, alias: l }
@@ -47,17 +51,33 @@ elements:
         - "<gray>Fin dans : <white>{l.ends_at.until()}"
         - ""
         - "<red>Cliquer pour retirer"
+      de:
+        - "{l.is_auction ? \"<gold>Auktion\" : \"<green>Festpreis\"}"
+        - ""
+        - "<gray>{l.is_auction ? \"Startgebot\" : \"Preis\"}: <gold>{l.is_auction ? l.start_price_display : l.price_display}"
+        - "{l.has_bids ? \"<gray>Höchstes Gebot: <gold>\" : \"\"}{l.has_bids ? l.current_bid_display : \"\"}"
+        - "<gray>Endet in: <white>{l.ends_at.until()}"
+        - ""
+        - "<red>Klicken zum Zurückziehen"
+      es:
+        - "{l.is_auction ? \"<gold>Subasta\" : \"<green>Precio fijo\"}"
+        - ""
+        - "<gray>{l.is_auction ? \"Puja inicial\" : \"Precio\"}: <gold>{l.is_auction ? l.start_price_display : l.price_display}"
+        - "{l.has_bids ? \"<gray>Mejor puja: <gold>\" : \"\"}{l.has_bids ? l.current_bid_display : \"\"}"
+        - "<gray>Termina en: <white>{l.ends_at.until()}"
+        - ""
+        - "<red>Haz clic para retirarlo"
     click:
       left: [ { run_command: "auctions:cancel {l.id}" } ]
   - id: back
     positions: 45
     material: ARROW
-    title: { en: "<white>Back", fr: "<white>Retour" }
+    title: { en: "<white>Back", fr: "<white>Retour", de: "<white>Zurück", es: "<white>Volver" }
     click: { left: [ open_previous_menu ] }
   - id: prev
     positions: 48
     material: ARROW
-    title: { en: "<white>Previous page", fr: "<white>Page précédente" }
+    title: { en: "<white>Previous page", fr: "<white>Page précédente", de: "<white>Vorherige Seite", es: "<white>Página anterior" }
     click: { left: [ { pagination_prev: grid } ] }
     states:
       - if: [ { pagination_at_first: grid } ]
@@ -66,7 +86,7 @@ elements:
   - id: next
     positions: 50
     material: ARROW
-    title: { en: "<white>Next page", fr: "<white>Page suivante" }
+    title: { en: "<white>Next page", fr: "<white>Page suivante", de: "<white>Nächste Seite", es: "<white>Página siguiente" }
     click: { left: [ { pagination_next: grid } ] }
     states:
       - if: [ { pagination_at_last: grid } ]
@@ -75,5 +95,5 @@ elements:
   - id: close
     positions: 53
     material: BARRIER
-    title: { en: "<red>Close", fr: "<red>Fermer" }
+    title: { en: "<red>Close", fr: "<red>Fermer", de: "<red>Schließen", es: "<red>Cerrar" }
     click: { left: [ close_menu ] }
