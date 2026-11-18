@@ -3,7 +3,9 @@ package net.artisanmc.auctions
 import net.artisanmc.auctions.config.ConfigModel
 import net.artisanmc.auctions.config.ConfigStore
 import net.artisanmc.auctions.files.ModuleFiles
+import net.artisanmc.auctions.paper.ArtisanImports
 import net.artisanmc.auctions.paper.AuctionHouse
+import net.artisanmc.auctions.paper.Imports
 import net.artisanmc.auctions.paper.Currencies
 import net.artisanmc.auctions.paper.ModuleBindings
 import net.artisanmc.auctions.sources.SettingsSource
@@ -25,6 +27,7 @@ class AuctionsModule(
     private val house: (ArtisanAPI) -> AuctionHouse,
     /** `/ah` and its sub-commands. */
     private val ahCommand: () -> PlayerCommandDeclaration,
+    private val imports: Imports,
 ) : ArtisanModule {
     override fun getId(): String = ID
     override fun getSchemaVersion(): String = "auctions/v1"
@@ -49,6 +52,8 @@ class AuctionsModule(
         // Here, not in the plugin's onEnable: `/ah` belongs to this module, its folder holds its
         // file, and disabling the module removes it.
         api.playerCommands.register(ahCommand())
+        // `/artisan import auctions:<source>` (Artisan's API 1.7.0); `/ah admin import` otherwise.
+        if (api.isCompatibleWith(ArtisanImports.MIN_API)) ArtisanImports.register(api, imports)
     }
 
     /** After each sync from the editor and `/artisan reload`. */

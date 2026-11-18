@@ -44,19 +44,23 @@ module off removes the command.
 | more active listings | `auctions.limit.<n>`, `auctions.limit.unlimited` |
 | `/ah admin cancel <id>`, `closeall [player]`, `reindex`, `import …` | `auctions.admin` (op) |
 
-### Moving from zAuctionHouse
+### Moving from another auction plugin
 
-Stop the server, remove the zAuctionHouse jar from `plugins/` (keep its folder), start, then
-from the console: `/ah admin import zauctionhouse` (v4) or `/ah admin import zauctionhouse-v3`
-for a dry run, and the same with `confirm` to import. The connection comes from
-zAuctionHouse's own `config.yml` (SQLite, MySQL or MariaDB; v3 also JSON), opened read-only.
+Stop the server, remove the other plugin's jar from `plugins/` (keep its folder), start, then from
+the console a dry run, and the same with `confirm` to import:
 
-Active listings, items bought or expired but not collected, money owed to sellers, and the
-sales history (which feeds the median from day one) are copied. Running it again skips what
-was already imported. Import from one version only: if zAuctionHouse already migrated your v3
-data into v4, use `zauctionhouse`. A currency the dry run reports as unknown is mapped in
-`import.currency_map`. Items stored in zAuctionHouse's pre-1.20.5 NBT form are not read: they
-stay in zAuctionHouse and the report lists them.
+| From | Command (Artisan API 1.7.0+) |
+|---|---|
+| zAuctionHouse v4 / v3 | `/artisan import auctions:zauctionhouse` / `auctions:zauctionhouse-v3` |
+| AuctionHouse (Kiranhart) | `/artisan import auctions:auctionhouse` |
+| anything else | `/artisan import auctions:json <file>`, the `auctions/1` file of `docs/site/recipes/import-file.md` |
+
+The source is opened read-only from its own `config.yml`. The report lists what would be imported
+and what stays in the source, and why. Running it again skips what was already imported. A batch
+can be rolled back (`/artisan import rollback <batch>`); what players changed since is kept. On an
+older Artisan, `/ah admin import <source> [confirm]` imports without the history or the rollback.
+A currency the dry run reports as unknown is mapped in `import.currency_map`. Recipes:
+`docs/site/recipes/`.
 
 ## For developers
 
@@ -93,7 +97,9 @@ Inside the plugin, Bukkit stays at the edge so the rules are tested without a se
   items). Money and items always move in an order where a failure ends in the claims box:
   a buyer's charge is journaled (`artisan_auctions_payments`) before it is taken, every close is a
   compare-and-swap on the listing's version, and a claim is marked taken before it is given.
-- `median/`: price keys, the median and its cache. `importer/`: replayable imports.
+- `median/`: price keys, the median and its cache. `importer/`: replayable imports (readers of each
+  source, the `auctions/1` file, SNBT items), registered with Artisan's `/artisan import` by
+  `paper/ArtisanImports`; each record carries its batch in `import_map` for the rollback.
 - `db/`: SQL and forward-only migrations of the `artisan_auctions_*` tables (Artisan's `database.table-prefix` +
   `auctions_`), in the suite's shared database (`api.database`).
 - `paper/`: the Paper side: item serialization, currencies, events, menu repaints, `/ah`,

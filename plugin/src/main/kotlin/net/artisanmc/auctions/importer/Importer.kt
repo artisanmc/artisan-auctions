@@ -13,8 +13,12 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.UUID
 
-/** An item as the source stored it, with an id for the report. */
-data class SourceItem(val raw: String)
+/**
+ * An item as the source stored it. [encoding] says how [raw] reads: `zah` (zAuctionHouse),
+ * `bukkit_yaml` (Bukkit's YAML of an `ItemStack`), `snbt` (an item's NBT as text), `paper`
+ * (base64 of Paper's `serializeAsBytes`). The canonical format (`auctions/1`) names it per item.
+ */
+data class SourceItem(val raw: String, val encoding: String = "zah")
 
 /** What the source holds, in this add-on's terms but with the source's item encoding and currency names. */
 sealed interface SourceRecord {
@@ -54,8 +58,15 @@ data class SourceSale(
     val items: List<SourceItem>,
 ) : SourceRecord
 
+/** A record the source holds but the reader leaves there on purpose: [code] is stable (`active_bid`). */
+data class SourceRejection(val id: String, val code: String, val message: String)
+
 /** Everything read from a source, plus what could not even be read. */
-data class SourceData(val records: List<SourceRecord>, val problems: List<String> = emptyList())
+data class SourceData(
+    val records: List<SourceRecord>,
+    val problems: List<String> = emptyList(),
+    val rejected: List<SourceRejection> = emptyList(),
+)
 
 /** One plugin we import from. [read] is blocking and never writes to the source. */
 interface AuctionSource {
@@ -96,6 +107,7 @@ class Importer(
         val unreadable: List<String> = emptyList(),
         val unknownCurrencies: Set<String> = emptySet(),
         val problems: List<String> = emptyList(),
+        val rejected: List<SourceRejection> = emptyList(),
     ) {
         /** A real import is refused while a currency has no provider. */
         val blocked: Boolean get() = unknownCurrencies.isNotEmpty()
@@ -105,6 +117,7 @@ class Importer(
             add("  active listings: $listings, items to claim: $itemClaims, amounts to claim: $moneyClaims, sales history: $sales")
             if (alreadyImported > 0) add("  already imported, skipped: $alreadyImported")
             if (unknownCurrencies.isNotEmpty()) add("  unknown currencies (map them in import.currency_map): ${unknownCurrencies.sorted().joinToString()}")
+            rejected.groupBy { it.code }.forEach { (code, list) -> add("  left in the source, $code: ${list.size} (${list.first().message})") }
             if (unreadable.isNotEmpty()) add("  left in the source, unreadable items: ${unreadable.size} (${unreadable.take(10).joinToString()}${if (unreadable.size > 10) "…" else ""})")
             problems.take(10).forEach { add("  $it") }
         }
@@ -113,7 +126,7 @@ class Importer(
     private class Counter { var listings = 0; var itemClaims = 0; var moneyClaims = 0; var sales = 0; var done = 0 }
 
     /** Blocking. With [dryRun] nothing is written. */
-    fun run(source: String, data: SourceData, dryRun: Boolean): Report {
+    fun run(source: String, data: SourceData, dryRun: Boolean, batch: String? = null): Report {
         val unknown = data.records.flatMap(::currenciesOf).filter { currency(it) == null }.toSet()
         val skip = store.importedIds(source)
         val unreadable = mutableListOf<String>()
@@ -131,31 +144,31 @@ class Importer(
             when (r) {
                 is SourceListing -> {
                     n.listings++
-                    if (write) writeOrCount(source, r.id, target, now, n, listing = listing(target, r, stacks))
+                    if (write) writeOrCount(source, r.id, target, now, n, batch, listing = listing(target, r, stacks))
                 }
                 is SourceClaim -> {
                     val claims = claims(target, r, stacks)
                     if (claims.isEmpty()) { problems += "${r.id}: empty claim, skipped"; continue }
                     if (r.amount != null) n.moneyClaims++ else n.itemClaims += claims.size
-                    if (write) writeOrCount(source, r.id, target, now, n, claims = claims)
+                    if (write) writeOrCount(source, r.id, target, now, n, batch, claims = claims)
                 }
                 is SourceSale -> {
                     val rows = sales(target, r, stacks)
                     if (rows.isEmpty()) continue // mixed lot or no price: not part of the median
                     n.sales++
-                    if (write) writeOrCount(source, r.id, target, now, n, sales = rows)
+                    if (write) writeOrCount(source, r.id, target, now, n, batch, sales = rows)
                 }
             }
         }
         return Report(source, dryRun || unknown.isNotEmpty(), n.listings, n.itemClaims, n.moneyClaims, n.sales,
-            n.done, unreadable, unknown, problems)
+            n.done, unreadable, unknown, problems, data.rejected)
     }
 
     private fun writeOrCount(
-        source: String, id: String, target: UUID, now: Long, n: Counter,
+        source: String, id: String, target: UUID, now: Long, n: Counter, batch: String?,
         listing: Listing? = null, claims: List<Claim> = emptyList(), sales: List<Sale> = emptyList(),
     ) {
-        if (!store.importRecord(source, id, target, now, listing, claims, sales)) n.done++
+        if (!store.importRecord(source, id, target, now, listing, claims, sales, batch)) n.done++
     }
 
     private fun currenciesOf(r: SourceRecord): List<String> = when (r) {
@@ -181,9 +194,10 @@ class Importer(
     private fun claims(listing: UUID, r: SourceClaim, stacks: List<ConvertedItem>): List<Claim> {
         if (r.amount != null && r.currency != null) {
             if (r.amount.signum() <= 0) return emptyList()
-            return listOf(Claim.money(server, r.owner, currency(r.currency) ?: r.currency, Fees.money(r.amount), r.reason, null, r.createdAt))
+            return listOf(Claim.money(server, r.owner, currency(r.currency) ?: r.currency, Fees.money(r.amount), r.reason, listing, r.createdAt))
         }
-        return stacks.map { Claim.item(server, r.owner, it.blob, r.reason, null, r.createdAt) }
+        // Tagged with the record's target id, which no listing has: the rollback finds them by it.
+        return stacks.map { Claim.item(server, r.owner, it.blob, r.reason, listing, r.createdAt) }
     }
 
     private fun sales(listing: UUID, r: SourceSale, stacks: List<ConvertedItem>): List<Sale> {

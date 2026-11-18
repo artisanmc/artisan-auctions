@@ -10,6 +10,7 @@ import net.artisanmc.auctions.paper.AhCommand
 import net.artisanmc.auctions.paper.AuctionHouse
 import net.artisanmc.auctions.paper.Currencies
 import net.artisanmc.auctions.paper.Imports
+import net.artisanmc.auctions.paper.ArtisanImports
 import net.artisanmc.auctions.paper.PaperItems
 import net.artisanmc.auctions.paper.PlayerListener
 import net.artisanmc.auctions.files.ModuleFiles
@@ -67,8 +68,9 @@ class AuctionsPlugin : JavaPlugin() {
         val currencies = Currencies(server.servicesManager)
         val house = AuctionHouse(this, api, serverId, AuctionStore(dataSource, tablePrefix), currencies) { configStore.current }
         this.house = house
-        val admin = AdminCommands(house, Imports(this, house, currencies))
-        api.modules.register(AuctionsModule(configStore, currencies, logger, { house }) { AhCommand.declaration(house, admin) })
+        val imports = Imports(this, house, currencies) { api.isCompatibleWith(ArtisanImports.MIN_API) }
+        val admin = AdminCommands(house, imports)
+        api.modules.register(AuctionsModule(configStore, currencies, logger, { house }, { AhCommand.declaration(house, admin) }, imports))
         server.servicesManager.register(AuctionsService::class.java, AuctionsServiceImpl(configStore, house), this, ServicePriority.Normal)
 
         server.pluginManager.registerEvents(PlayerListener(house), this)

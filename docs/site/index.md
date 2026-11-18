@@ -7,7 +7,7 @@ sidebar:
 
 Artisan Auctions gives your players an auction house: they sell with `/ah`, bid on timed auctions and
 collect what they bought or won from a claims box. A median price is shown on every listing, and one
-command imports an existing zAuctionHouse.
+command imports an existing zAuctionHouse or AuctionHouse.
 
 ## Requirements
 
@@ -28,4 +28,5 @@ Artisan provides the menus, the dialogs, the editor and the database (H2, MySQL 
   [the local config.yml](configuration/config-yml/).
 - [Commands and permissions](commands/).
 - Worked cases: [auctions only](recipes/auctions-only/), [VIP listing limits](recipes/vip-limits/),
-  [move from zAuctionHouse](recipes/zauctionhouse-import/).
+  [move from zAuctionHouse](recipes/zauctionhouse-import/), [move from AuctionHouse](recipes/auctionhouse-import/),
+  [import from any plugin](recipes/import-file/).
