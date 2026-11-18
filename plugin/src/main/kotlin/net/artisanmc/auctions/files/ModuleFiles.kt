@@ -20,7 +20,7 @@ object ModuleFiles {
     const val ROOT = "module"
     const val TEMPLATE = "auctions_files"
     /** Raise it whenever a file of [PATHS] changes: untouched copies follow, edited ones merge. */
-    const val VERSION = 2
+    const val VERSION = 3
 
     val PATHS = listOf(
         "data/config.yaml",
@@ -31,7 +31,9 @@ object ModuleFiles {
         "dialogs/ah_sell_auction.yaml",
         "dialogs/ah_sell_fixed.yaml",
         "dialogs/ah_sell_type.yaml",
+        "lang/de.yaml",
         "lang/en.yaml",
+        "lang/es.yaml",
         "lang/fr.yaml",
         "menus/ah_claims.yaml",
         "menus/ah_lot.yaml",
@@ -56,17 +58,31 @@ default_lang: en
 languages:
   - en
   - fr
+  - de
+  - es
+lore_max_width: 240
+"""
+
+    /** What [writeModuleFile] wrote before German and Spanish: upgraded when found untouched. */
+    private const val MODULE_FILE_EN_FR = """schema: module/v1
+default_lang: en
+languages:
+  - en
+  - fr
 lore_max_width: 240
 """
 
     /**
      * The folder's languages and lore width (`artisan-module.yml`), which a template never
-     * ships: written when the folder has no module file under any name. True when written.
+     * ships: written when the folder has no module file under any name, or still holds the
+     * English and French one this plugin wrote before 1.0 (then German and Spanish join it). An
+     * owner's own module file is never touched. True when written.
      */
     fun writeModuleFile(dir: File): Boolean {
-        if (MODULE_FILE_NAMES.any { File(dir, it).exists() }) return false
-        dir.mkdirs()
         val target = File(dir, MODULE_FILE_NAMES.first())
+        val untouched = target.isFile && target.readText(Charsets.UTF_8) == MODULE_FILE_EN_FR
+        if (!untouched && MODULE_FILE_NAMES.any { File(dir, it).exists() }) return false
+        dir.mkdirs()
         val tmp = File(dir, ".${target.name}.tmp")
         tmp.writeText(MODULE_FILE, Charsets.UTF_8)
         Files.move(tmp.toPath(), target.toPath(), StandardCopyOption.ATOMIC_MOVE)

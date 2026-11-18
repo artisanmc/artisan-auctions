@@ -31,7 +31,7 @@ object AhCommand {
             .name("ah")
             .aliases("auctionhouse", "hdv")
             .permission(AuctionHouse.PERM_USE)
-            .description(mapOf("en" to "Open the auction house", "fr" to "Ouvrir l'hôtel des ventes"))
+            .description(mapOf("en" to "Open the auction house", "fr" to "Ouvrir l'hôtel des ventes", "de" to "Das Auktionshaus öffnen", "es" to "Abrir la casa de subastas"))
             .opensMenu(menu(AuctionHouse.MENU_MAIN))
             .child(sub("sell", AuctionHouse.PERM_SELL)
                 .argument(CommandArgument.string("price").optional())

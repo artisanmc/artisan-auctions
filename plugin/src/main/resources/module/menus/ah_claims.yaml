@@ -1,7 +1,7 @@
 schema: menu/v1
 title:
   - kind: plain
-    value: { en: "<dark_gray>Claims box", fr: "<dark_gray>Récupération" }
+    value: { en: "<dark_gray>Claims box", fr: "<dark_gray>Récupération", de: "<dark_gray>Abholfach", es: "<dark_gray>Buzón de recogida" }
 size: 54
 inputs:
   - name: claims
@@ -25,6 +25,14 @@ elements:
         - ""
         - "<gray>Conservé encore : <white>{c.expires_at.until()}"
         - "<yellow>Cliquer pour le récupérer"
+      de:
+        - ""
+        - "<gray>Aufbewahrt noch: <white>{c.expires_at.until()}"
+        - "<yellow>Klicken zum Abholen"
+      es:
+        - ""
+        - "<gray>Se guarda durante: <white>{c.expires_at.until()}"
+        - "<yellow>Haz clic para recogerlo"
     click:
       left: [ { run_command: "auctions:claim {c.id}" } ]
     states:
@@ -36,17 +44,21 @@ elements:
             - "<yellow>Click to receive it"
           fr:
             - "<yellow>Cliquer pour le recevoir"
+          de:
+            - "<yellow>Klicken zum Erhalten"
+          es:
+            - "<yellow>Haz clic para recibirlo"
         click:
           left: [ { run_command: "auctions:claim {c.id}" } ]
   - id: back
     positions: 45
     material: ARROW
-    title: { en: "<white>Back", fr: "<white>Retour" }
+    title: { en: "<white>Back", fr: "<white>Retour", de: "<white>Zurück", es: "<white>Volver" }
     click: { left: [ open_previous_menu ] }
   - id: prev
     positions: 48
     material: ARROW
-    title: { en: "<white>Previous page", fr: "<white>Page précédente" }
+    title: { en: "<white>Previous page", fr: "<white>Page précédente", de: "<white>Vorherige Seite", es: "<white>Página anterior" }
     click: { left: [ { pagination_prev: grid } ] }
     states:
       - if: [ { pagination_at_first: grid } ]
@@ -55,17 +67,21 @@ elements:
   - id: all
     positions: 49
     material: HOPPER
-    title: { en: "<green>Take everything", fr: "<green>Tout récupérer" }
+    title: { en: "<green>Take everything", fr: "<green>Tout récupérer", de: "<green>Alles abholen", es: "<green>Recoger todo" }
     lore:
       en:
         - "<gray>What does not fit stays here"
       fr:
         - "<gray>Ce qui ne rentre pas reste ici"
+      de:
+        - "<gray>Was nicht passt, bleibt hier"
+      es:
+        - "<gray>Lo que no quepa se queda aquí"
     click: { left: [ { run_command: "auctions:claim all" } ] }
   - id: next
     positions: 50
     material: ARROW
-    title: { en: "<white>Next page", fr: "<white>Page suivante" }
+    title: { en: "<white>Next page", fr: "<white>Page suivante", de: "<white>Nächste Seite", es: "<white>Página siguiente" }
     click: { left: [ { pagination_next: grid } ] }
     states:
       - if: [ { pagination_at_last: grid } ]
@@ -74,5 +90,5 @@ elements:
   - id: close
     positions: 53
     material: BARRIER
-    title: { en: "<red>Close", fr: "<red>Fermer" }
+    title: { en: "<red>Close", fr: "<red>Fermer", de: "<red>Schließen", es: "<red>Cerrar" }
     click: { left: [ close_menu ] }

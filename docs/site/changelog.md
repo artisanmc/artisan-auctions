@@ -14,4 +14,5 @@ sidebar:
 - Median price per item and currency, custom items recognised through Nexo, Oraxen, ItemsAdder or
   `median.custom_id_keys`.
 - Import from zAuctionHouse v3 and v4.
+- English, French, German and Spanish.
 - Menus, dialogs, texts and settings in `plugins/ArtisanAuctions/artisan_module/`, edited in the Artisan editor.
