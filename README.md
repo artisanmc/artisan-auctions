@@ -117,6 +117,9 @@ from `repo.artisanmc.net/releases`; for an unreleased version, publish it locall
 ./gradlew build   # → plugin/build/libs/ArtisanAuctions-<version>.jar
 ```
 
+Before a release, play it in game on Paper and on Folia: `e2e/run.sh paper <Artisan jar>`, then
+`e2e/run.sh folia <Artisan jar>` (see [`e2e/`](e2e/README.md)).
+
 Kotlin's stdlib is not shaded: it comes from Artisan, which ships it under its own names.
 Keep the Kotlin version equal to Artisan's (2.0.21).
 
