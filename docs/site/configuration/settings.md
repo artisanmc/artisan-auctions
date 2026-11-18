@@ -5,9 +5,11 @@ sidebar:
   order: 1
 ---
 
-`plugins/ArtisanAuctions/artisan_module/data/config.yaml` holds the rules players see: kinds of listing,
-durations, fees, currencies, forbidden items, the claims box and the median price. Edit it in the editor
-(the **auctions** folder, **Settings**); a publish applies it.
+`data/config.yml` holds the rules players see: kinds of listing, durations, fees, currencies, forbidden
+items, the claims box and the median price. Edit it in the editor (the **auctions** folder,
+**Settings**); a publish applies it. The shipped file is
+`plugins/ArtisanAuctions/artisan_module/originals/data/config.yml`; your edited copy is
+`plugins/ArtisanAuctions/artisan_module/data/config.yml` and wins over it.
 
 ## The shipped file
 
@@ -128,5 +130,5 @@ Durations are written `90s`, `15m`, `48h`, `30d`, or combined (`1h 30m`).
 
 ## Texts
 
-The texts are `plugins/ArtisanAuctions/artisan_module/lang/en.yaml` and `fr.yaml`, edited in the editor's
+The texts are `lang/en.yml` and `lang/fr.yml` of the module's folder, edited in the editor's
 **Translations** like the menus and dialogs.

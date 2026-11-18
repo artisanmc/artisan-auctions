@@ -23,16 +23,13 @@ You get a working auction house in four steps.
 | Path | What |
 |---|---|
 | `plugins/ArtisanAuctions/config.yml` | This server's id in the shared database ([config.yml](../configuration/config-yml/)) |
-| `plugins/ArtisanAuctions/artisan_module/data/config.yaml` | The rules ([Settings](../configuration/settings/)) |
-| `plugins/ArtisanAuctions/artisan_module/menus/` | `ah_main`, `ah_mine`, `ah_lot`, `ah_claims` |
-| `plugins/ArtisanAuctions/artisan_module/dialogs/` | Sell, bid, search, confirm and price-warning dialogs |
-| `plugins/ArtisanAuctions/artisan_module/lang/` | The texts, `en.yaml` and `fr.yaml` |
-| `plugins/ArtisanAuctions/artisan_module/commands/ah.yml` | The `/ah` command, written by Artisan |
+| `plugins/ArtisanAuctions/artisan_module/originals/` | The module's files as shipped, written by Artisan at each start: `data/config.yml` (the rules, see [Settings](../configuration/settings/)), `menus/` (`ah_main`, `ah_mine`, `ah_lot`, `ah_claims`), `dialogs/` (sell, bid, search, confirm, price warning), `lang/` (`en.yml`, `fr.yml`), `commands/ah.yml` |
 | Tables `artisan_auctions_*` | Listings, claims, payments, sales history |
 
-Menus, dialogs, texts and the command are system elements: Artisan writes them again when they are
-missing and replaces them with each new version while you have not edited them. Once edited, they stay
-yours; **Reset** in the editor puts the module's version back.
+You never edit `originals/`. When you change a file in the editor (or copy one out of `originals/` to
+the same path in `artisan_module/`), your copy goes next to it, in `artisan_module/`, and wins over
+the shipped one. A new version of the plugin updates `originals/` and merges its changes into your
+copies. **Reset** in the editor deletes your copy and goes back to the shipped one.
 
 Everything the plugin keeps on disk is in `plugins/ArtisanAuctions/`: copy that folder to move the module
 to another server. A server updated from a development build kept the module's files in
