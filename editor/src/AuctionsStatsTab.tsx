@@ -213,7 +213,7 @@ function CurrencyStats({
               id: r.value,
               label: item(r.value),
               value: r.sum,
-              caption: `${money(r.sum)} · ${t("salesCount", { count: integer(r.count) })}`,
+              caption: `${money(r.sum)} · ${r.count === 1 ? t("salesCountOne") : t("salesCount", { count: integer(r.count) })}`,
             }))}
           />
         )}

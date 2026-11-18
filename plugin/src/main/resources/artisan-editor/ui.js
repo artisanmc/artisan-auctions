@@ -1,6 +1,6 @@
-import { createModuleI18n as Y, injectModuleStyles as J, useStatsRead as A, statsBreakdown as $, statsQuery as X, statsSeries as W, statsEvents as ee, StatsPanel as I, StatCard as N, TimeChart as te, BarList as ne, SortableTable as se, SDK_VERSION as ae } from "@artisan/editor-sdk";
-import { jsx as r, jsxs as k, Fragment as ie } from "react/jsx-runtime";
-const O = {
+import { createModuleI18n as Y, injectModuleStyles as J, useStatsRead as A, statsBreakdown as $, statsQuery as X, statsSeries as z, statsEvents as ee, StatsPanel as I, StatCard as N, TimeChart as te, BarList as ne, SortableTable as se, SDK_VERSION as ae } from "@artisan/editor-sdk";
+import { jsx as r, jsxs as k, Fragment as oe } from "react/jsx-runtime";
+const M = {
   tab: "Auctions",
   currency: "Currency",
   noData: "Nothing sold or listed yet. The figures fill in as players use /ah.",
@@ -29,6 +29,7 @@ const O = {
   topItems: "Items that move the most money",
   topItemsHint: "By volume over the period",
   salesCount: "{{count}} sales",
+  salesCountOne: "1 sale",
   lot: "Mixed lot",
   other: "Other items",
   recent: "Latest sales",
@@ -68,6 +69,7 @@ const O = {
   topItems: "Objets qui font circuler le plus d'argent",
   topItemsHint: "Par volume sur la période",
   salesCount: "{{count}} ventes",
+  salesCountOne: "1 vente",
   lot: "Lot mélangé",
   other: "Autres objets",
   recent: "Dernières ventes",
@@ -107,6 +109,7 @@ const O = {
   topItems: "Gegenstände mit dem meisten Umsatz",
   topItemsHint: "Nach Volumen im Zeitraum",
   salesCount: "{{count}} Verkäufe",
+  salesCountOne: "1 Verkauf",
   lot: "Gemischtes Los",
   other: "Andere Gegenstände",
   recent: "Letzte Verkäufe",
@@ -146,6 +149,7 @@ const O = {
   topItems: "Objetos que mueven más dinero",
   topItemsHint: "Por volumen en el periodo",
   salesCount: "{{count}} ventas",
+  salesCountOne: "1 venta",
   lot: "Lote mixto",
   other: "Otros objetos",
   recent: "Últimas ventas",
@@ -156,7 +160,7 @@ const O = {
   price: "Precio",
   seller: "Vendedor",
   buyer: "Comprador"
-}, oe = { en: O.tab, fr: R.tab, de: U.tab, es: G.tab }, re = { en: O, fr: R, de: U, es: G }, Q = Y(re), w = {
+}, ie = { en: M.tab, fr: R.tab, de: U.tab, es: G.tab }, re = { en: M, fr: R, de: U, es: G }, Q = Y(re), w = {
   listed: "auctions:listed",
   sold: "auctions:sold",
   expired: "auctions:expired",
@@ -175,22 +179,22 @@ function ue(t) {
   }));
 }
 function ce(t, e) {
-  const a = [...t ?? []].sort((i, u) => u.sum - i.sum).map((i) => i.value);
-  for (const i of e ?? []) a.includes(i.currency) || a.push(i.currency);
-  return a.filter((i) => i !== "");
+  const a = [...t ?? []].sort((o, u) => u.sum - o.sum).map((o) => o.value);
+  for (const o of e ?? []) a.includes(o.currency) || a.push(o.currency);
+  return a.filter((o) => o !== "");
 }
 const g = (t) => (t ?? []).reduce((e, a) => e + a.count, 0), V = (t) => (t ?? []).reduce((e, a) => e + a.sum, 0);
 function de(t, e, a) {
   if (e === void 0 || e === 0) return null;
-  const i = (t - e) / e, u = new Intl.NumberFormat(a, { style: "percent", maximumFractionDigits: 0 }).format(Math.abs(i));
-  return `${i >= 0 ? "▲" : "▼"} ${u}`;
+  const o = (t - e) / e, u = new Intl.NumberFormat(a, { style: "percent", maximumFractionDigits: 0 }).format(Math.abs(o));
+  return `${o >= 0 ? "▲" : "▼"} ${u}`;
 }
 function me(t) {
   const e = t.replace(/^minecraft:/, "").split("_").filter(Boolean).join(" ");
   return e ? e.charAt(0).toUpperCase() + e.slice(1) : t;
 }
 function ve(t, e = 10) {
-  return [...t ?? []].sort((a, i) => i.sum - a.sum || i.count - a.count).slice(0, e);
+  return [...t ?? []].sort((a, o) => o.sum - a.sum || o.count - a.count).slice(0, e);
 }
 function he(t) {
   return t.map((e) => {
@@ -206,7 +210,7 @@ function he(t) {
     };
   });
 }
-const M = (t) => (t ?? []).map((e) => e.sum), pe = `
+const W = (t) => (t ?? []).map((e) => e.sum), pe = `
 .aa-stats { display: flex; flex-direction: column; gap: 16px; color: var(--text); }
 .aa-stats-pick { display: flex; align-items: center; gap: 10px; }
 .aa-stats-pick .select { height: 32px; padding: 5px 10px; font-size: 13px; min-width: 160px; }
@@ -217,31 +221,31 @@ const M = (t) => (t ?? []).map((e) => e.sum), pe = `
 `;
 function fe(t) {
   J("auctions", pe);
-  const e = Q(), { serverId: a, period: i, player: u } = t, p = A(
-    `${a}|currencies|${i.from}|${i.to}|${u ?? ""}`,
-    () => $(a, { event: w.sold, from: i.from, to: i.to, player: u }, "currency")
-  ), o = A(
+  const e = Q(), { serverId: a, period: o, player: u } = t, p = A(
+    `${a}|currencies|${o.from}|${o.to}|${u ?? ""}`,
+    () => $(a, { event: w.sold, from: o.from, to: o.to, player: u }, "currency")
+  ), i = A(
     `${a}|market`,
     () => X(a, le).then((v) => ue(v.rows))
   );
   if (p.error) return /* @__PURE__ */ r("p", { className: "aa-stats-empty", children: e("unavailable") });
-  const n = ce(p.data, o.data), m = n.includes(t.focus ?? "") ? t.focus : n[0];
+  const n = ce(p.data, i.data), m = n.includes(t.focus ?? "") ? t.focus : n[0];
   return m ? /* @__PURE__ */ k("div", { className: "aa-stats", children: [
     n.length > 1 && /* @__PURE__ */ k("label", { className: "aa-stats-pick", children: [
       /* @__PURE__ */ r("span", { className: "aa-h", children: e("currency") }),
       /* @__PURE__ */ r("select", { className: "select", value: m, onChange: (v) => t.onFocus(v.target.value), children: n.map((v) => /* @__PURE__ */ r("option", { value: v, children: v }, v)) })
     ] }),
-    /* @__PURE__ */ r(be, { ...t, currency: m, market: o }, m)
+    /* @__PURE__ */ r(be, { ...t, currency: m, market: i }, m)
   ] }) : p.loading ? /* @__PURE__ */ r("p", { className: "aa-stats-empty", children: "…" }) : /* @__PURE__ */ r("p", { className: "aa-stats-empty", children: e("noData") });
 }
 function be({
   serverId: t,
   period: e,
   player: a,
-  compare: i,
+  compare: o,
   lang: u,
   currency: p,
-  market: o
+  market: i
 }) {
   const n = Q(), m = { currency: p }, v = `${t}|${p}|${a ?? ""}`, P = (s, l) => Promise.all([
     $(t, { event: w.sold, from: s, to: l, player: a, dims: m }, "item"),
@@ -249,13 +253,13 @@ function be({
     $(t, { event: w.expired, from: s, to: l, player: a, dims: m }, "type"),
     $(t, { event: w.revenue, from: s, to: l, player: a, dims: m }, "kind")
   ]).then(([C, y, q, L]) => ({ sold: C, listed: y, expired: q, revenue: L })), E = A(`${v}|${e.from}|${e.to}`, () => P(e.from, e.to)), Z = A(
-    `${v}|${e.previous.from}|${e.previous.to}|${i}`,
-    () => i ? P(e.previous.from, e.previous.to) : Promise.resolve(void 0)
+    `${v}|${e.previous.from}|${e.previous.to}|${o}`,
+    () => o ? P(e.previous.from, e.previous.to) : Promise.resolve(void 0)
   ), D = A(
-    `${v}|series|${e.from}|${e.to}|${e.by}|${i}`,
+    `${v}|series|${e.from}|${e.to}|${e.by}|${o}`,
     () => Promise.all([
-      W(t, { event: w.sold, from: e.from, to: e.to, player: a, dims: m }, e.by),
-      i ? W(
+      z(t, { event: w.sold, from: e.from, to: e.to, player: a, dims: m }, e.by),
+      o ? z(
         t,
         { event: w.sold, from: e.previous.from, to: e.previous.to, player: a, dims: m },
         e.by
@@ -280,25 +284,25 @@ function be({
       sub: L ?? n("overPeriod"),
       trend: l === void 0 ? void 0 : K(l, y, q)
     }
-  ), d = o.data?.find((s) => s.currency === p), B = o.error === void 0 ? null : n(o.error === "server_offline" ? "offline" : o.error === "unknown_query" ? "notComputed" : "unavailable"), F = (D.data?.[0] ?? []).map(
+  ), d = i.data?.find((s) => s.currency === p), B = i.error === void 0 ? null : n(i.error === "server_offline" ? "offline" : i.error === "unknown_query" ? "notComputed" : "unavailable"), F = (D.data?.[0] ?? []).map(
     (s) => new Intl.DateTimeFormat(u, e.by === "hour" ? { hour: "2-digit", day: "numeric" } : { day: "numeric", month: "short" }).format(
       new Date(s.start * 1e3)
     )
-  ), z = [
+  ), O = [
     {
       id: "now",
       label: n("volumeChart"),
       color: "var(--chart-1)",
-      points: M(D.data?.[0]).map((s, l) => ({ label: F[l] ?? "", y: s }))
+      points: W(D.data?.[0]).map((s, l) => ({ label: F[l] ?? "", y: s }))
     }
   ];
-  return D.data?.[1] && z.push({
+  return D.data?.[1] && O.push({
     id: "previous",
     label: n("previous"),
     color: "var(--chart-2)",
     dashed: !0,
-    points: M(D.data[1]).map((s, l) => ({ label: F[l] ?? "", y: s }))
-  }), /* @__PURE__ */ k(ie, { children: [
+    points: W(D.data[1]).map((s, l) => ({ label: F[l] ?? "", y: s }))
+  }), /* @__PURE__ */ k(oe, { children: [
     /* @__PURE__ */ k("div", { className: "aa-stats-cards", children: [
       x(n("volume"), h && _, b, c && V(c.sold)),
       x(n("sales"), h && H, f, c && g(c.sold)),
@@ -327,7 +331,7 @@ function be({
         }
       )
     ] }) }),
-    /* @__PURE__ */ r(I, { title: n("volumeChart"), hint: n("overPeriod"), children: /* @__PURE__ */ r(te, { series: z, label: n("volumeChart"), formatY: b }) }),
+    /* @__PURE__ */ r(I, { title: n("volumeChart"), hint: n("overPeriod"), children: /* @__PURE__ */ r(te, { series: O, label: n("volumeChart"), formatY: b }) }),
     /* @__PURE__ */ r(I, { title: n("topItems"), hint: n("topItemsHint"), children: H === 0 ? /* @__PURE__ */ r("p", { className: "aa-stats-empty", children: n("noData") }) : /* @__PURE__ */ r(
       ne,
       {
@@ -335,7 +339,7 @@ function be({
           id: s.value,
           label: T(s.value),
           value: s.sum,
-          caption: `${b(s.sum)} · ${n("salesCount", { count: f(s.count) })}`
+          caption: `${b(s.sum)} · ${s.count === 1 ? n("salesCountOne") : n("salesCount", { count: f(s.count) })}`
         }))
       }
     ) }),
@@ -350,15 +354,15 @@ function be({
     ) })
   ] });
 }
-function ge(t, e, a, i, u) {
+function ge(t, e, a, o, u) {
   const p = new Intl.DateTimeFormat(e, { dateStyle: "short", timeStyle: "short" });
   return [
-    { id: "at", label: t("when"), value: (o) => o.at, render: (o) => p.format(new Date(o.at)) },
-    { id: "item", label: t("item"), value: (o) => a(o.item) },
-    { id: "quantity", label: t("quantity"), align: "right", value: (o) => o.quantity, render: (o) => i(o.quantity) },
-    { id: "price", label: t("price"), align: "right", value: (o) => o.price, render: (o) => u(o.price) },
-    { id: "seller", label: t("seller"), value: (o) => o.seller },
-    { id: "buyer", label: t("buyer"), value: (o) => o.buyer }
+    { id: "at", label: t("when"), value: (i) => i.at, render: (i) => p.format(new Date(i.at)) },
+    { id: "item", label: t("item"), value: (i) => a(i.item) },
+    { id: "quantity", label: t("quantity"), align: "right", value: (i) => i.quantity, render: (i) => o(i.quantity) },
+    { id: "price", label: t("price"), align: "right", value: (i) => i.price, render: (i) => u(i.price) },
+    { id: "seller", label: t("seller"), value: (i) => i.seller },
+    { id: "buyer", label: t("buyer"), value: (i) => i.buyer }
   ];
 }
 const we = {
@@ -368,7 +372,7 @@ const we = {
   sdk: ae,
   sidebar: { icon: () => null, label: "Auctions", to: "/m/auctions" },
   routes: [],
-  stats: { label: oe, component: fe }
+  stats: { label: ie, component: fe }
 }, xe = { ...we, sdk: "1.23.0" };
 export {
   xe as default
