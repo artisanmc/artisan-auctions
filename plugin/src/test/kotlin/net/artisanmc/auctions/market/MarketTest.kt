@@ -5,6 +5,8 @@ import net.artisanmc.auctions.api.ListingType
 import net.artisanmc.auctions.config.AuctionsConfig
 import net.artisanmc.auctions.db.AuctionStore
 import net.artisanmc.auctions.db.Migrations
+import net.artisanmc.auctions.stats.MarketFigures
+import net.artisanmc.auctions.stats.MarketStats
 import org.h2.jdbcx.JdbcDataSource
 import java.math.BigDecimal
 import java.time.Duration
@@ -119,6 +121,9 @@ class MarketTest {
         m.buy(alice, l.id) {}
         threads.drain()
         assertEquals(listOf("blob-STONE"), store.unclaimed("srv", alice).map { it.itemBlob })
+        assertEquals(1 to emptyMap(), store.waitingClaims("srv"), "what the market figure counts")
+        store.insertClaims(listOf(Claim.money("srv", bob, "vault", BigDecimal("2.5"), ClaimReason.REFUND, null, now)))
+        assertEquals(1 to mapOf("vault" to BigDecimal("2.50")), store.waitingClaims("srv").let { (n, m) -> n to m.mapValues { it.value.setScale(2) } })
     }
 
     @Test fun `two servers on one database sell a listing once`() {
@@ -205,6 +210,57 @@ class MarketTest {
         val l = list(m)
         assertEquals("9", money(seller), "10 % of 100 + 1")
         assertEquals(l.id, store.activeListings("srv").single().id)
+    }
+
+    @Test fun `the market statistics, listings, fee, sale, tax, cancel, expiry`() {
+        val recorded = mutableListOf<Triple<String, UUID?, Pair<Map<String, String>, Double>>>()
+        hooks = MarketStats(Hooks.None) { event, player, dims, value, _ -> recorded += Triple(event, player, dims to value) }
+        config = config.copy(limits = config.limits.copy(listingFee = AuctionsConfig.Fee(BigDecimal(10), BigDecimal(1))))
+        wallets.balances[seller to "vault"] = BigDecimal(100)
+        val m = market()
+        val sold = list(m)
+        val cancelled = list(m)
+        list(m, request(items = listOf(item("STONE"), item("DIRT").copy(slot = 1))))
+        wallets.balances[alice to "vault"] = BigDecimal(150)
+        m.buy(alice, sold.id) {}
+        m.cancel(seller, cancelled.id, admin = false) {}
+        threads.drain()
+        now += Duration.ofHours(49).toMillis()
+        m.expireDue()
+        threads.drain()
+
+        val stone = mapOf("type" to "sale", "currency" to "vault", "item" to "stone")
+        assertEquals(listOf(
+            Triple("auctions:listed", seller, stone to 100.0),
+            Triple("auctions:revenue", seller, mapOf("currency" to "vault", "kind" to "fee") to 11.0),
+        ), recorded.take(2))
+        assertTrue(Triple("auctions:sold", alice, stone to 100.0) in recorded)
+        assertTrue(Triple("auctions:revenue", seller, mapOf("currency" to "vault", "kind" to "tax") to 5.0) in recorded)
+        assertTrue(Triple("auctions:cancelled", seller, stone + ("by" to "seller") to 1.0) in recorded)
+        assertTrue(Triple("auctions:expired", seller, stone + ("item" to "lot") to 1.0) in recorded, "a lot of two kinds")
+    }
+
+    @Test fun `a failing statistics sink never stops a sale`() {
+        hooks = MarketStats(Hooks.None) { _, _, _, _, _ -> error("stats down") }
+        val m = market()
+        val l = list(m)
+        wallets.balances[alice to "vault"] = BigDecimal(100)
+        var out: Market.Outcome? = null
+        m.buy(alice, l.id) { out = it }
+        threads.drain()
+        assertIs<Market.Bought>(out)
+    }
+
+    @Test fun `the market figure has one row per currency`() {
+        val a = list(market())
+        val tokens = a.copy(id = UUID.randomUUID(), currency = "tokens", price = BigDecimal(40))
+        val rows = MarketFigures.rows(listOf(a, tokens), 3, mapOf("vault" to BigDecimal("12.5")))
+        assertEquals(listOf("tokens", "vault"), rows.map { it["currency"] })
+        assertEquals(1, rows[1]["sales"])
+        assertEquals(100.0, rows[1]["sale_value"])
+        assertEquals(12.5, rows[1]["money_waiting"])
+        assertEquals(0.0, rows[0]["money_waiting"])
+        assertEquals(3, rows[0]["items_waiting"])
     }
 
     @Test fun `checks refuse what the config forbids`() {

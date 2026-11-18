@@ -34,6 +34,8 @@ interface Hooks {
     fun preCancel(actor: UUID, listing: Listing, admin: Boolean): Veto? = null
 
     fun listed(listing: Listing) {}
+    /** The seller paid [fee] to list [listing] (after [listed]; zero when free). */
+    fun feePaid(listing: Listing, fee: BigDecimal) {}
     fun sold(listing: Listing, buyer: UUID, price: BigDecimal, tax: BigDecimal) {}
     fun bidPlaced(listing: Listing, bidder: UUID, amount: BigDecimal) {}
     fun outbid(listing: Listing, previous: UUID, amount: BigDecimal) {}
