@@ -174,6 +174,7 @@ class AuctionStore(private val ds: DataSource, private val prefix: String) {
     fun importRecord(
         source: String, sourceId: String, target: UUID, now: Long,
         listing: Listing? = null, claims: List<Claim> = emptyList(), sales: List<Sale> = emptyList(),
+        batch: String? = null,
     ): Boolean = tx { c ->
         val fresh = c.prepareStatement("SELECT 1 FROM ${prefix}import_map WHERE source = ? AND source_id = ?").use { s ->
             s.setString(1, source); s.setString(2, sourceId)
@@ -181,14 +182,70 @@ class AuctionStore(private val ds: DataSource, private val prefix: String) {
         }
         if (!fresh) return@tx false
         // The primary key makes a concurrent replay fail here rather than write twice.
-        c.prepareStatement("INSERT INTO ${prefix}import_map (source, source_id, target_id, imported_at) VALUES (?, ?, ?, ?)").use { s ->
-            s.setString(1, source); s.setString(2, sourceId); s.setString(3, target.toString()); s.setLong(4, now)
+        c.prepareStatement("INSERT INTO ${prefix}import_map (source, source_id, target_id, imported_at, batch) VALUES (?, ?, ?, ?, ?)").use { s ->
+            s.setString(1, source); s.setString(2, sourceId); s.setString(3, target.toString()); s.setLong(4, now); s.setString(5, batch)
             s.executeUpdate()
         }
         listing?.let { insertListing(c, it) }
         insertClaims(c, claims)
         insertSales(c, sales)
         true
+    }
+
+    /** The records [batch] imported: source id → target id. */
+    fun importedInBatch(batch: String): List<Pair<String, UUID>> = read { c ->
+        c.prepareStatement("SELECT source_id, target_id FROM ${prefix}import_map WHERE batch = ? ORDER BY source_id").use { s ->
+            s.setString(1, batch)
+            s.executeQuery().use { rs -> buildList { while (rs.next()) add(rs.getString(1) to UUID.fromString(rs.getString(2))) } }
+        }
+    }
+
+    enum class Undo { UNDONE, CHANGED, GONE }
+
+    /**
+     * Undoes one imported record if it is still as the import left it: its listing active at
+     * version 0 (never bid on, bought or withdrawn), its claims not taken. Then the listing, its
+     * items, its claims and its sales rows go, with its `import_map` row, in one transaction; the
+     * same record can be imported again. [dryRun]: only tells.
+     */
+    fun undoImport(batch: String, sourceId: String, target: UUID, dryRun: Boolean): Undo = tx { c ->
+        val id = target.toString()
+        val mapped = c.prepareStatement("SELECT 1 FROM ${prefix}import_map WHERE batch = ? AND source_id = ? AND target_id = ?").use { s ->
+            s.setString(1, batch); s.setString(2, sourceId); s.setString(3, id)
+            s.executeQuery().use { it.next() }
+        }
+        if (!mapped) return@tx Undo.GONE
+        val listing = c.prepareStatement("SELECT status, row_version FROM ${prefix}listings WHERE id = ?").use { s ->
+            s.setString(1, id)
+            s.executeQuery().use { rs -> if (rs.next()) rs.getString(1) to rs.getInt(2) else null }
+        }
+        if (listing != null && (listing.first != ListingStatus.ACTIVE.id || listing.second != 0)) return@tx Undo.CHANGED
+        val taken = c.prepareStatement("SELECT COUNT(*) FROM ${prefix}claims WHERE listing_id = ? AND claimed_at IS NOT NULL").use { s ->
+            s.setString(1, id)
+            s.executeQuery().use { rs -> rs.next(); rs.getInt(1) }
+        }
+        if (taken > 0) return@tx Undo.CHANGED
+        if (dryRun) return@tx Undo.UNDONE
+        if (listing != null) {
+            // The compare-and-swap of a purchase or a bid fails after this: nothing was sold.
+            val gone = c.prepareStatement("DELETE FROM ${prefix}listings WHERE id = ? AND status = 'active' AND row_version = 0").use { s ->
+                s.setString(1, id); s.executeUpdate()
+            }
+            if (gone != 1) { c.rollback(); return@tx Undo.CHANGED }
+            c.prepareStatement("DELETE FROM ${prefix}listing_items WHERE listing_id = ?").use { s -> s.setString(1, id); s.executeUpdate() }
+        }
+        c.prepareStatement("DELETE FROM ${prefix}claims WHERE listing_id = ? AND claimed_at IS NULL").use { s ->
+            s.setString(1, id); s.executeUpdate()
+        }
+        c.prepareStatement("SELECT COUNT(*) FROM ${prefix}claims WHERE listing_id = ?").use { s ->
+            s.setString(1, id)
+            s.executeQuery().use { rs -> rs.next(); if (rs.getInt(1) > 0) { c.rollback(); return@tx Undo.CHANGED } }
+        }
+        c.prepareStatement("DELETE FROM ${prefix}sales WHERE listing_id = ?").use { s -> s.setString(1, id); s.executeUpdate() }
+        c.prepareStatement("DELETE FROM ${prefix}import_map WHERE batch = ? AND source_id = ?").use { s ->
+            s.setString(1, batch); s.setString(2, sourceId); s.executeUpdate()
+        }
+        Undo.UNDONE
     }
 
     // ── Reindexing price keys ────────────────────────────────────────────────

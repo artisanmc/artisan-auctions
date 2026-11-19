@@ -19,7 +19,7 @@ sidebar:
 | `/ah admin cancel <id>` | `auctions.admin` (op) | Cancels a listing; the item goes to the seller's claims. | `/ah admin cancel 3f2a` |
 | `/ah admin closeall [player]` | `auctions.admin` | Cancels every listing, or every listing of a player. | `/ah admin closeall Steve` |
 | `/ah admin reindex` | `auctions.admin` | Recomputes the median price keys in the background, after a change of `median.*`. | `/ah admin reindex` |
-| `/ah admin import <zauctionhouse\|zauctionhouse-v3> [confirm]` | `auctions.admin` | Imports zAuctionHouse; a dry run without `confirm`. See [the recipe](../recipes/zauctionhouse-import/). | `/ah admin import zauctionhouse confirm` |
+| `/ah admin import <zauctionhouse\|zauctionhouse-v3\|auctionhouse> [confirm]` | `auctions.admin` | Imports another auction plugin; a dry run without `confirm`. With Artisan API 1.7.0, the same as `/artisan import auctions:<source>` (permission `artisan.admin.import`), which also takes `auctions:json <file>` and `rollback <batch>`. See [zAuctionHouse](../recipes/zauctionhouse-import/), [AuctionHouse](../recipes/auctionhouse-import/), [any plugin](../recipes/import-file/). | `/artisan import auctions:auctionhouse confirm` |
 
 | Permission | Default | Allows |
 |---|---|---|

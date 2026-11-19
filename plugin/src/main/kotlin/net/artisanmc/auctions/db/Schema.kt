@@ -133,5 +133,11 @@ object Schema {
             """,
             "CREATE INDEX ${prefix}payments_state ON ${prefix}payments (server, state)",
         )),
+        // The run of `/artisan import` that wrote each record (ADR `data-imports` of Artisan): its
+        // rollback finds them here. Null for the records imported before this version.
+        Migration(3, "import batches", listOf(
+            "ALTER TABLE ${prefix}import_map ADD batch VARCHAR(32)",
+            "CREATE INDEX ${prefix}import_map_batch ON ${prefix}import_map (batch)",
+        )),
     )
 }

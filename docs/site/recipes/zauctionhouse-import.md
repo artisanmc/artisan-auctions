@@ -13,11 +13,12 @@ You replace zAuctionHouse without losing a listing or a coin owed to a seller.
 3. From the console, a dry run:
 
    ```text
-   ah admin import zauctionhouse
+   artisan import auctions:zauctionhouse
    ```
 
-   Use `zauctionhouse-v3` for a v3 install. If zAuctionHouse already migrated your v3 data into v4,
-   import `zauctionhouse` only.
+   Use `auctions:zauctionhouse-v3` for a v3 install. If zAuctionHouse already migrated your v3 data into v4,
+   import `auctions:zauctionhouse` only. The report lists what would be imported and what stays in
+   zAuctionHouse, and why.
 4. A currency the report calls unknown goes in `import.currency_map` of the Settings:
 
    ```yaml
@@ -29,10 +30,20 @@ You replace zAuctionHouse without losing a listing or a coin owed to a seller.
 5. Import:
 
    ```text
-   ah admin import zauctionhouse confirm
+   artisan import auctions:zauctionhouse confirm
    ```
+
+   The report ends with a batch id. `artisan import rollback <batch>` then undoes the import, keeping
+   what players changed since (a listing bought, an item claimed).
+
+The same steps exist in the Artisan editor, in the server's **Imports** tab: dry run, import, then undo
+from the history.
 
 Active listings, items bought or expired but not collected, money owed to sellers and the sales history
 (which feeds the median from day one) are copied. Running it again skips what was already imported.
 Items stored in zAuctionHouse's pre-1.20.5 NBT form are not read: they stay in zAuctionHouse and the
 report lists them.
+
+With Artisan older than API 1.7.0, `ah admin import zauctionhouse [confirm]` does the same, without
+the history or the rollback. With a newer one, it hands over to `artisan import`, which needs the
+permission `artisan.admin.import`.

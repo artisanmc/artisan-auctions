@@ -13,7 +13,9 @@ sidebar:
 - Claims box, money owed paid on join, purge after `claims.retention`.
 - Median price per item and currency, custom items recognised through Nexo, Oraxen, ItemsAdder or
   `median.custom_id_keys`.
-- Import from zAuctionHouse v3 and v4.
+- Import from zAuctionHouse v3 and v4, AuctionHouse (Kiranhart), and any plugin through the
+  `auctions/1` import file. With Artisan API 1.7.0, through `/artisan import`: history, and rollback
+  of an import while keeping what players changed since.
 - English, French, German and Spanish.
 - An Auctions tab in the editor's Statistics (Artisan API 1.5.0 or newer): volume, sales, revenue,
   what the house holds, top items and latest sales.

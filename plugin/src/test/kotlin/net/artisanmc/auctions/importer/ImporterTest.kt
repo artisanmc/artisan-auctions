@@ -72,4 +72,43 @@ class ImporterTest {
         assertEquals(setOf("GEMS"), r.unknownCurrencies)
         assertTrue(store.activeListings("srv").isEmpty())
     }
+
+    @Test fun `a batch rolls back what is untouched and keeps what players changed`() {
+        importer.run("zah", data, dryRun = false, batch = "b1")
+        val listing = store.activeListings("srv").single()
+        val claims = store.unclaimed("srv", buyer)
+        assertEquals(2, claims.size)
+        // A player took one of the two imported items: that record stays.
+        assertTrue(store.markClaimed(claims.first().id, 9_000))
+
+        val batch = store.importedInBatch("b1").toMap()
+        assertEquals(setOf("listing:1", "claim:3", "money:4", "sale:5"), batch.keys)
+        assertEquals(AuctionStore.Undo.UNDONE, store.undoImport("b1", "listing:1", batch.getValue("listing:1"), dryRun = true))
+        assertEquals(1, store.activeListings("srv").size, "a dry run removes nothing")
+
+        assertEquals(AuctionStore.Undo.UNDONE, store.undoImport("b1", "listing:1", batch.getValue("listing:1"), dryRun = false))
+        assertEquals(AuctionStore.Undo.CHANGED, store.undoImport("b1", "claim:3", batch.getValue("claim:3"), dryRun = false))
+        assertEquals(AuctionStore.Undo.UNDONE, store.undoImport("b1", "money:4", batch.getValue("money:4"), dryRun = false))
+        assertEquals(AuctionStore.Undo.UNDONE, store.undoImport("b1", "sale:5", batch.getValue("sale:5"), dryRun = false))
+        assertEquals(AuctionStore.Undo.GONE, store.undoImport("b1", "sale:5", batch.getValue("sale:5"), dryRun = false))
+
+        assertTrue(store.activeListings("srv").none { it.id == listing.id })
+        assertEquals(1, store.unclaimed("srv", buyer).size, "the claim record is kept whole")
+        assertTrue(store.unclaimed("srv", seller).isEmpty())
+        assertTrue(store.recentSales("vanilla:stone", "vault", 0, 10, setOf("sale")).isEmpty())
+        assertEquals(setOf("claim:3"), store.importedIds("zah"))
+
+        // Undone records can be imported again.
+        val again = importer.run("zah", data, dryRun = false, batch = "b2")
+        assertEquals(1, again.listings)
+        assertEquals(1, again.alreadyImported)
+    }
+
+    @Test fun `a bought listing is not rolled back`() {
+        importer.run("zah", data, dryRun = false, batch = "b1")
+        val l = store.activeListings("srv").single()
+        assertTrue(store.close(l.id, 0, net.artisanmc.auctions.market.ListingStatus.SOLD, 10_000))
+        val target = store.importedInBatch("b1").toMap().getValue("listing:1")
+        assertEquals(AuctionStore.Undo.CHANGED, store.undoImport("b1", "listing:1", target, dryRun = false))
+    }
 }
