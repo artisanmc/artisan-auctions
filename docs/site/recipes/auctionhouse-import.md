@@ -30,6 +30,9 @@ Requires Artisan with the API 1.7.0 or later.
 
    `artisan import rollback <batch>` undoes it, keeping what players changed since.
 
+The same steps exist in the Artisan editor, in the server's **Imports** tab: dry run, import, then undo
+from the history.
+
 | In AuctionHouse | In Artisan Auctions |
 |---|---|
 | A listing with a buy-now price | An active listing at that price, same end |

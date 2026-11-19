@@ -16,6 +16,9 @@ artisan import auctions:json <file> confirm    # import
 The dry run lists every wrong value with its place in the file (`listings[3].seller: not a UUID`);
 that record is left aside, the rest imports. Running the same file again skips what was imported.
 
+The same steps exist in the Artisan editor, in the server's **Imports** tab: dry run, import, then undo
+from the history.
+
 ```json
 {
   "format": "auctions/1",

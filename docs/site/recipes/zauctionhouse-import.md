@@ -36,6 +36,9 @@ You replace zAuctionHouse without losing a listing or a coin owed to a seller.
    The report ends with a batch id. `artisan import rollback <batch>` then undoes the import, keeping
    what players changed since (a listing bought, an item claimed).
 
+The same steps exist in the Artisan editor, in the server's **Imports** tab: dry run, import, then undo
+from the history.
+
 Active listings, items bought or expired but not collected, money owed to sellers and the sales history
 (which feeds the median from day one) are copied. Running it again skips what was already imported.
 Items stored in zAuctionHouse's pre-1.20.5 NBT form are not read: they stay in zAuctionHouse and the
