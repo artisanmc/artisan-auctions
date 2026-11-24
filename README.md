@@ -136,9 +136,9 @@ Keep the Kotlin version equal to Artisan's (2.0.21).
 ## Bedrock
 
 A Bedrock player (Geyser) only sends one click, the tap. `ah_main` puts actions on the right and
-shift clicks, so it ships in a `bedrock` variant, shown to Bedrock players when the menu opens
-(`variants.yaml` of the module's folder, editable under **View as → Display rules…** in the
-editor): a button of the bottom bar picks what a tap on a listing does (buy or bid, buy an auction
+shift clicks, so it ships in a `bedrock` variant, shown to Bedrock players when the menu opens (Artisan's
+`bedrock` menu variant, the same for every module; a player can also pick theirs with
+`/artisan variant`): a button of the bottom bar picks what a tap on a listing does (buy or bid, buy an auction
 now, see the lot's contents) and another clears the search. It needs no resource pack.
 
 The three other menus only use the left click: Bedrock players get them as they are.
